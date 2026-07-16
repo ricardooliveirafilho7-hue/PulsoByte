@@ -5,11 +5,11 @@
   "description": "PulsoByte — Tecnologia sem ruído. Portal editorial de tecnologia.",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run validate:images && next build",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "covers": "node scripts/generate-covers.mjs"
+    "validate:images": "node scripts/validate-article-images.mjs"
   },
   "dependencies": {
     "github-slugger": "^2.0.0",

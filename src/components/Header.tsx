@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { categories } from "@/config/categories";
 import { site } from "@/config/site";
 import { Wordmark } from "@/components/Logo";
 import { MobileMenu } from "@/components/MobileMenu";
+import { DesktopNav } from "@/components/DesktopNav";
 
 function SearchLink({ className = "" }: { className?: string }) {
   return (
@@ -23,7 +23,7 @@ export function Header() {
   return (
     <header className="bg-surface">
       {/* Fio superior com o slogan */}
-      <div className="border-b border-line">
+      <div className="hidden border-b border-line sm:block">
         <div className="mx-auto flex h-9 max-w-[1280px] items-center justify-between px-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted sm:px-6 lg:px-8">
           <span>{site.slogan.replace(/\.$/, "")}</span>
           <div className="hidden items-center gap-6 sm:flex">
@@ -38,7 +38,7 @@ export function Header() {
       </div>
 
       {/* Masthead */}
-      <div className="mx-auto grid max-w-[1280px] grid-cols-[2.75rem_1fr_2.75rem] items-center px-4 py-4 sm:px-6 lg:grid-cols-3 lg:px-8 lg:py-7">
+      <div className="mx-auto grid max-w-[1280px] grid-cols-[2.75rem_1fr_2.75rem] items-center px-4 py-2.5 sm:px-6 sm:py-4 lg:grid-cols-3 lg:px-8 lg:py-7">
         <MobileMenu />
         <div className="hidden lg:block" aria-hidden="true" />
         <Link
@@ -52,28 +52,7 @@ export function Header() {
       </div>
 
       {/* Navegação de editorias */}
-      <nav aria-label="Editorias" className="hidden border-t border-line lg:block">
-        <ul className="mx-auto flex max-w-[1280px] items-center justify-center gap-9 px-8">
-          {categories.map((category) => (
-            <li key={category.slug}>
-              <Link
-                href={`/categoria/${category.slug}`}
-                className="block border-b-2 border-transparent py-3 text-xs font-bold uppercase tracking-[0.14em] text-ink transition-colors duration-200 hover:border-brand hover:text-brand-dark"
-              >
-                {category.shortName}
-              </Link>
-            </li>
-          ))}
-          <li>
-            <Link
-              href="/artigos"
-              className="block border-b-2 border-transparent py-3 text-xs font-bold uppercase tracking-[0.14em] text-muted transition-colors duration-200 hover:border-brand hover:text-brand-dark"
-            >
-              Tudo
-            </Link>
-          </li>
-        </ul>
-      </nav>
+      <DesktopNav />
 
       <div className="rule-double" />
     </header>

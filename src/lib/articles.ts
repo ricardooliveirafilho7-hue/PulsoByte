@@ -16,10 +16,33 @@ export interface Article {
   featured: boolean;
   coverImage: string;
   coverImageAlt: string;
+  coverImageCaption?: string;
+  coverImageCredit: string;
+  coverImageCreditUrl?: string;
+  coverImageSource: string;
+  coverImageLicense?: string;
+  coverImageType: CoverImageType;
+  coverImagePosition: string;
   seoTitle: string;
   seoDescription: string;
   readingTimeMinutes: number;
   content: string;
+}
+
+export const coverImageTypes = [
+  "photo",
+  "official",
+  "press",
+  "screenshot",
+  "diagram",
+  "illustration",
+  "original",
+] as const;
+
+export type CoverImageType = (typeof coverImageTypes)[number];
+
+function isCoverImageType(value: unknown): value is CoverImageType {
+  return typeof value === "string" && coverImageTypes.some((type) => type === value);
 }
 
 const ARTICLES_DIR = path.join(process.cwd(), "content", "articles");
@@ -35,6 +58,13 @@ const REQUIRED_STRINGS = [
   "updatedAt",
   "coverImage",
   "coverImageAlt",
+] as const;
+
+const REQUIRED_PUBLISHED_IMAGE_FIELDS = [
+  "coverImageCredit",
+  "coverImageSource",
+  "coverImageType",
+  "coverImagePosition",
 ] as const;
 
 function parseArticle(fileName: string): Article {
@@ -53,6 +83,28 @@ function parseArticle(fileName: string): Article {
   }
   if (data.status !== "draft" && data.status !== "published") {
     throw new Error(`Artigo "${fileName}": "status" deve ser "draft" ou "published".`);
+  }
+  if (data.status === "published") {
+    for (const field of REQUIRED_PUBLISHED_IMAGE_FIELDS) {
+      if (typeof data[field] !== "string" || data[field].trim() === "") {
+        throw new Error(
+          `Erro no artigo "${data.slug}": ${field} não foi preenchido. Corrija o frontmatter antes de publicar.`
+        );
+      }
+    }
+  }
+  if (typeof data.coverImageType === "string" && !isCoverImageType(data.coverImageType)) {
+    throw new Error(
+      `Erro no artigo "${data.slug}": coverImageType "${data.coverImageType}" é inválido. Use: ${coverImageTypes.join(", ")}.`
+    );
+  }
+  if (
+    typeof data.coverImagePosition === "string" &&
+    !/^(?:100|\d{1,2})% (?:100|\d{1,2})%$/.test(data.coverImagePosition)
+  ) {
+    throw new Error(
+      `Erro no artigo "${data.slug}": coverImagePosition deve usar dois percentuais, por exemplo "50% 50%".`
+    );
   }
   if (!Array.isArray(data.tags) || data.tags.some((tag) => typeof tag !== "string")) {
     throw new Error(`Artigo "${fileName}": "tags" deve ser uma lista de textos.`);
@@ -78,6 +130,21 @@ function parseArticle(fileName: string): Article {
     featured: data.featured === true,
     coverImage: data.coverImage,
     coverImageAlt: data.coverImageAlt,
+    coverImageCaption:
+      typeof data.coverImageCaption === "string" ? data.coverImageCaption : undefined,
+    coverImageCredit:
+      typeof data.coverImageCredit === "string" ? data.coverImageCredit : "PulsoByte",
+    coverImageCreditUrl:
+      typeof data.coverImageCreditUrl === "string" ? data.coverImageCreditUrl : undefined,
+    coverImageSource:
+      typeof data.coverImageSource === "string" ? data.coverImageSource : "Produção própria",
+    coverImageLicense:
+      typeof data.coverImageLicense === "string" ? data.coverImageLicense : undefined,
+    coverImageType: isCoverImageType(data.coverImageType)
+      ? data.coverImageType
+      : "original",
+    coverImagePosition:
+      typeof data.coverImagePosition === "string" ? data.coverImagePosition : "50% 50%",
     seoTitle: typeof data.seoTitle === "string" ? data.seoTitle : data.title,
     seoDescription:
       typeof data.seoDescription === "string" ? data.seoDescription : data.description,
