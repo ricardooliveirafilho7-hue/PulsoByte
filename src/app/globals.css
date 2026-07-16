@@ -1,0 +1,211 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #f7f8fc;
+  --color-surface: #ffffff;
+  --color-ink: #0b0d12;
+  --color-muted: #626978;
+  --color-line: #e5e7ee;
+  --color-brand: #4f63ff;
+  --color-brand-dark: #3345db;
+  --color-brand-soft: #eef0ff;
+  --color-cyan: #20c9d6;
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-source-serif), ui-serif, Georgia, serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  text-rendering: optimizeLegibility;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+::selection {
+  background-color: var(--color-brand-soft);
+  color: var(--color-brand-dark);
+}
+
+/* ---------------------------------------------------------------------------
+   Corpo do artigo — tipografia editorial serifada
+--------------------------------------------------------------------------- */
+
+.article-body {
+  font-family: var(--font-serif);
+  font-size: 1.125rem; /* 18px */
+  line-height: 1.75;
+  color: var(--color-ink);
+  overflow-wrap: break-word;
+}
+
+.article-body > * + * {
+  margin-top: 1.25em;
+}
+
+.article-body h2,
+.article-body h3 {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--color-ink);
+  scroll-margin-top: 6rem;
+  text-wrap: balance;
+}
+
+.article-body h2 {
+  font-size: 1.625rem;
+  margin-top: 2.25em;
+}
+
+.article-body h3 {
+  font-size: 1.25rem;
+  margin-top: 1.75em;
+}
+
+.article-body a {
+  color: var(--color-brand-dark);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--color-brand) 40%, transparent);
+  text-underline-offset: 3px;
+}
+
+.article-body a:hover {
+  text-decoration-color: var(--color-brand);
+}
+
+.article-body strong {
+  font-weight: 700;
+}
+
+.article-body ul,
+.article-body ol {
+  padding-left: 1.5rem;
+}
+
+.article-body ul {
+  list-style: disc;
+}
+
+.article-body ol {
+  list-style: decimal;
+}
+
+.article-body li + li {
+  margin-top: 0.5em;
+}
+
+.article-body li::marker {
+  color: var(--color-brand);
+}
+
+.article-body blockquote {
+  border-left: 3px solid var(--color-brand);
+  padding-left: 1.25rem;
+  font-style: italic;
+  color: var(--color-muted);
+}
+
+.article-body hr {
+  border: 0;
+  border-top: 1px solid var(--color-line);
+  margin: 2.5em 0;
+}
+
+/* Tabelas roláveis em telas pequenas */
+.article-body .table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--color-line);
+  border-radius: 0.75rem;
+  background-color: var(--color-surface);
+}
+
+.article-body table {
+  width: 100%;
+  min-width: 32rem;
+  border-collapse: collapse;
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.article-body th,
+.article-body td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-line);
+  vertical-align: top;
+}
+
+.article-body thead th {
+  background-color: var(--color-brand-soft);
+  color: var(--color-brand-dark);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.article-body tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* Código */
+.article-body code {
+  font-size: 0.875em;
+  background-color: var(--color-brand-soft);
+  color: var(--color-brand-dark);
+  border-radius: 0.375rem;
+  padding: 0.15em 0.4em;
+}
+
+.article-body pre {
+  background-color: var(--color-ink);
+  color: #e6e9f2;
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  font-size: 0.875rem;
+  line-height: 1.65;
+}
+
+.article-body pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+}
+
+.article-body figure img {
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-line);
+}
+
+.article-body figcaption {
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  color: var(--color-muted);
+  margin-top: 0.5rem;
+}
