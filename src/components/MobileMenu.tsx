@@ -74,7 +74,12 @@ export function MobileMenu() {
               <li key={category.slug} className="border-b border-line last:border-b-0">
                 <Link
                   href={`/categoria/${category.slug}`}
-                  className="block py-3.5 font-serif text-lg font-bold text-ink transition-colors duration-200 hover:text-brand-dark"
+                  aria-current={pathname === `/categoria/${category.slug}` ? "page" : undefined}
+                  className={`block border-l-2 py-3.5 pl-3 font-serif text-lg font-bold transition-colors duration-200 ${
+                    pathname === `/categoria/${category.slug}`
+                      ? "border-brand text-brand-dark"
+                      : "border-transparent text-ink hover:text-brand-dark"
+                  }`}
                 >
                   {category.name}
                 </Link>

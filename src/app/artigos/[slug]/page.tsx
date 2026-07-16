@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCategory } from "@/config/categories";
@@ -15,6 +14,7 @@ import { MobileToc, TocList } from "@/components/TableOfContents";
 import { TextStory } from "@/components/stories";
 import { AdSlot } from "@/components/mdx";
 import { MdxContent } from "@/components/mdx/MdxContent";
+import { ArticleImage } from "@/components/ArticleImage";
 
 export function generateStaticParams() {
   return getArticles().map((article) => ({ slug: article.slug }));
@@ -103,7 +103,12 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           {article.description}
         </p>
         <div className="mx-auto mt-8 flex max-w-[640px] flex-wrap items-center justify-center gap-x-4 gap-y-1 border-y border-line py-3.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
-          <span className="text-ink">{article.author}</span>
+          <Link
+            href="/sobre#redacao"
+            className="relative z-10 text-ink transition-colors hover:text-brand-dark"
+          >
+            {article.author}
+          </Link>
           <span aria-hidden="true" className="text-line">|</span>
           <time dateTime={article.publishedAt}>{formatDate(article.publishedAt)}</time>
           {wasUpdated && (
@@ -120,16 +125,9 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
         </div>
       </header>
 
-      <figure className="relative mx-auto mt-10 aspect-[16/9] max-w-[1080px] overflow-hidden bg-ink">
-        <Image
-          src={article.coverImage}
-          alt={article.coverImageAlt}
-          fill
-          priority
-          sizes="(max-width: 1080px) 100vw, 1080px"
-          className="object-cover"
-        />
-      </figure>
+      <div className="mx-auto mt-10 max-w-[1080px]">
+        <ArticleImage article={article} variant="article" priority />
+      </div>
 
       {/* Corpo em três colunas no desktop: compartilhar / texto / índice */}
       <div className="mx-auto mt-10 max-w-[1160px] lg:grid lg:grid-cols-[56px_minmax(0,1fr)_280px] lg:gap-12">
@@ -170,10 +168,11 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
                 </p>
                 <ul className="mt-4 space-y-4">
                   {related.map((item) => (
-                    <li key={item.slug} className="border-b border-line pb-4 last:border-b-0">
+                    <li key={item.slug} className="group relative border-b border-line pb-4 last:border-b-0">
+                      <ArticleImage article={item} variant="related" sizes="240px" />
                       <Link
                         href={`/artigos/${item.slug}`}
-                        className="text-sm font-semibold leading-snug transition-colors duration-200 hover:text-brand-dark"
+                        className="mt-2 block text-sm font-semibold leading-snug transition-colors duration-200 hover:text-brand-dark after:absolute after:inset-0"
                       >
                         {item.title}
                       </Link>

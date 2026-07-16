@@ -44,6 +44,13 @@ status: "draft"                     # draft = só em desenvolvimento
 featured: false                     # true = destaque principal da home
 coverImage: "/images/articles/capa.webp"
 coverImageAlt: "Descrição acessível da imagem"
+coverImageCaption: "Legenda curta que contextualiza a fotografia."
+coverImageCredit: "Nome do fotógrafo ou empresa"
+coverImageCreditUrl: "https://fonte-original.example/imagem"
+coverImageSource: "Unsplash"
+coverImageLicense: "Licença Unsplash"
+coverImageType: "photo"              # photo, official, press, screenshot, diagram, illustration ou original
+coverImagePosition: "50% 50%"        # ponto focal usado nos diferentes cortes
 seoTitle: "Título para mecanismos de busca"
 seoDescription: "Descrição para mecanismos de busca"
 ---
@@ -60,10 +67,11 @@ duplicado interrompem o build com uma mensagem explicando o problema.
 
 ## Como trocar imagens
 
-- Coloque a capa em `public/images/articles/` (WebP ou AVIF, proporção 16:9, ~1280×720) e
-  aponte `coverImage` para o caminho.
-- As capas de demonstração são geradas por `npm run covers`
-  (`scripts/generate-covers.mjs`) — substitua-as por imagens reais quando quiser.
+- Coloque a capa em `public/images/articles/` (preferencialmente WebP, 1600×900 e cerca de
+  500 KB ou menos) e aponte `coverImage` para o caminho local.
+- O arquivo deve ter o mesmo nome do slug e nunca deve ser carregado por hotlink.
+- Registre autor, página original, fonte, licença e ponto focal no frontmatter.
+- Consulte o processo completo e a checklist em [`docs/image-guidelines.md`](docs/image-guidelines.md).
 - A imagem social padrão é `public/images/og-default.png` (1200×630).
 
 ## Como editar categorias

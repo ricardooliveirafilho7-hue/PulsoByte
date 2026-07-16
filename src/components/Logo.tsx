@@ -46,7 +46,7 @@ export function Wordmark({
 }) {
   const text =
     size === "masthead"
-      ? "text-[2rem] sm:text-[2.75rem] lg:text-[3.25rem]"
+      ? "text-[1.65rem] sm:text-[2.75rem] lg:text-[3.25rem]"
       : "text-[1.35rem]";
   const tick =
     size === "masthead"

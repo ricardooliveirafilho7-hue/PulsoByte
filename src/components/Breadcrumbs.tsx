@@ -38,7 +38,12 @@ export function Breadcrumbs({
         }`}
       >
         {items.map((item, index) => (
-          <li key={index} className="flex max-w-full items-center gap-2">
+          <li
+            key={index}
+            className={`max-w-full items-center gap-2 ${
+              index > 0 && index < items.length - 1 ? "hidden sm:flex" : "flex"
+            }`}
+          >
             {index > 0 && (
               <span aria-hidden="true" className="text-line">/</span>
             )}

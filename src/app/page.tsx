@@ -12,6 +12,7 @@ import {
 } from "@/components/stories";
 import { EmptyState } from "@/components/EmptyState";
 import { JsonLd } from "@/components/JsonLd";
+import { ArticleImage } from "@/components/ArticleImage";
 
 export const metadata = {
   title: { absolute: `${site.name} — Tecnologia sem ruído` },
@@ -50,7 +51,7 @@ function Radar({ articles }: { articles: Article[] }) {
     <div className="border-b border-line bg-surface">
       <div className="mx-auto flex max-w-[1280px] items-center gap-4 overflow-x-auto px-4 py-2.5 sm:px-6 lg:px-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <span className="flex shrink-0 items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-brand">
-          <span className="h-1.5 w-1.5 animate-pulse bg-cyan" aria-hidden="true" />
+          <span className="h-1.5 w-1.5 bg-cyan" aria-hidden="true" />
           Radar
         </span>
         {articles.map((article, index) => (
@@ -207,7 +208,7 @@ export default function HomePage() {
               {guias.map((article, index) => (
                 <li
                   key={article.slug}
-                  className="group relative flex gap-6 border-b border-line py-7"
+                  className="group relative grid grid-cols-[48px_88px_1fr] gap-4 border-b border-line py-7 sm:grid-cols-[64px_112px_1fr] sm:gap-6"
                 >
                   <span
                     aria-hidden="true"
@@ -215,6 +216,7 @@ export default function HomePage() {
                   >
                     {String(index + 1).padStart(2, "0")}
                   </span>
+                  <ArticleImage article={article} variant="thumbnail" sizes="112px" />
                   <div className="min-w-0">
                     <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">
                       Guia · {article.readingTimeMinutes} min
@@ -275,8 +277,13 @@ export default function HomePage() {
               </Link>
             </div>
             <div className="grid gap-10 sm:grid-cols-2 lg:gap-16">
-              {negocios.map((article) => (
-                <TextStory key={article.slug} article={article} tone="dark" />
+              {negocios.map((article, index) => (
+                <TextStory
+                  key={article.slug}
+                  article={article}
+                  tone="dark"
+                  featuredImage={index === 0}
+                />
               ))}
             </div>
           </div>

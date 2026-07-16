@@ -36,6 +36,18 @@ export default function AboutPage() {
         comparativos são honestos, nossos guias são testados e nossas notícias trazem o que muda
         para você — não apenas o que aconteceu.
       </p>
+      <h2>Política de imagens</h2>
+      <p>
+        A PulsoByte utiliza fotografias licenciadas, imagens oficiais, capturas próprias e
+        materiais de imprensa identificados. Créditos e fontes são apresentados sempre que
+        aplicável.
+      </p>
+      <h2 id="redacao">Redação PulsoByte</h2>
+      <p>
+        Os artigos assinados pela Redação PulsoByte são produzidos segundo a política editorial
+        do portal. A assinatura identifica o trabalho editorial coletivo; não atribuímos nomes,
+        experiências ou credenciais que não tenham sido verificados.
+      </p>
       <h2>Fale com a gente</h2>
       <p>
         Dúvidas, sugestões de pauta ou correções? Escreva para{" "}
