@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { categories } from "@/config/categories";
+import { Wordmark } from "@/components/Logo";
 
 /** Menu lateral do celular: acessível por teclado, fecha com Esc e ao navegar. */
 export function MobileMenu() {
@@ -37,7 +38,7 @@ export function MobileMenu() {
         aria-expanded={open}
         aria-controls={menuId}
         onClick={() => setOpen((value) => !value)}
-        className="flex h-11 w-11 items-center justify-center rounded-lg text-ink hover:bg-brand-soft"
+        className="flex h-11 w-11 items-center justify-center text-ink transition-colors duration-200 hover:text-brand"
       >
         <span className="sr-only">{open ? "Fechar menu" : "Abrir menu"}</span>
         <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
@@ -51,7 +52,7 @@ export function MobileMenu() {
           aria-hidden="true"
           tabIndex={-1}
           onClick={() => setOpen(false)}
-          className="fixed inset-0 z-40 bg-ink/40"
+          className="fixed inset-0 z-40 bg-ink/50"
         />
       )}
 
@@ -59,40 +60,47 @@ export function MobileMenu() {
         id={menuId}
         ref={panelRef}
         hidden={!open}
-        className="fixed inset-y-0 right-0 z-50 w-72 max-w-[85vw] overflow-y-auto border-l border-line bg-surface p-6 shadow-xl"
+        className="fixed inset-y-0 left-0 z-50 w-80 max-w-[88vw] overflow-y-auto border-r border-line bg-surface"
       >
-        <p className="text-xs font-semibold uppercase tracking-widest text-muted">Categorias</p>
-        <nav aria-label="Menu principal" className="mt-3">
-          <ul className="flex flex-col">
+        <div className="border-b border-line px-6 py-5">
+          <Wordmark />
+        </div>
+        <nav aria-label="Menu principal" className="px-6 py-5">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted">
+            Editorias
+          </p>
+          <ul className="mt-2 flex flex-col">
             {categories.map((category) => (
-              <li key={category.slug}>
+              <li key={category.slug} className="border-b border-line last:border-b-0">
                 <Link
                   href={`/categoria/${category.slug}`}
-                  className="block rounded-lg px-3 py-3 text-base font-medium text-ink hover:bg-brand-soft hover:text-brand-dark"
+                  className="block py-3.5 font-serif text-lg font-bold text-ink transition-colors duration-200 hover:text-brand-dark"
                 >
-                  {category.shortName}
+                  {category.name}
                 </Link>
               </li>
             ))}
           </ul>
         </nav>
-        <hr className="my-4 border-line" />
-        <ul className="flex flex-col text-sm">
-          {[
-            { href: "/artigos", label: "Todos os artigos" },
-            { href: "/sobre", label: "Sobre" },
-            { href: "/contato", label: "Contato" },
-          ].map((item) => (
-            <li key={item.href}>
-              <Link
-                href={item.href}
-                className="block rounded-lg px-3 py-2.5 text-muted hover:bg-brand-soft hover:text-brand-dark"
-              >
-                {item.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <div className="border-t-2 border-ink px-6 py-5">
+          <ul className="flex flex-col gap-1 text-xs font-bold uppercase tracking-[0.14em]">
+            {[
+              { href: "/artigos", label: "Todos os artigos" },
+              { href: "/buscar", label: "Buscar" },
+              { href: "/sobre", label: "Sobre" },
+              { href: "/contato", label: "Contato" },
+            ].map((item) => (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  className="block py-2.5 text-muted transition-colors duration-200 hover:text-brand-dark"
+                >
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </div>
   );

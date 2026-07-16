@@ -8,3 +8,11 @@ export function formatDate(isoDate: string): string {
     timeZone: "UTC",
   });
 }
+
+/** Data curta para listas densas: “14 jul”. */
+export function formatDateShort(isoDate: string): string {
+  return new Date(`${isoDate}T12:00:00Z`)
+    .toLocaleDateString(site.locale, { day: "2-digit", month: "short", timeZone: "UTC" })
+    .replace(" de ", " ")
+    .replace(".", "");
+}

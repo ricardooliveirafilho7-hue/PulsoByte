@@ -3,9 +3,8 @@ import { notFound } from "next/navigation";
 import { categories, getCategory } from "@/config/categories";
 import { site } from "@/config/site";
 import { getArticlesByCategory, paginate } from "@/lib/articles";
-import { ArticleCard } from "@/components/ArticleCard";
+import { HorizontalStory, LeadStory } from "@/components/stories";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
-import { CategoryIcon } from "@/components/CategoryIcon";
 import { EmptyState } from "@/components/EmptyState";
 import { Pagination } from "@/components/Pagination";
 
@@ -45,40 +44,48 @@ export default async function CategoryPage({
   if (!category) notFound();
 
   const articles = getArticlesByCategory(category.slug);
-  const { items, currentPage, totalPages } = paginate(
-    articles,
-    Number(query.page) || 1,
-    site.articlesPerPage
-  );
+  const page = Number(query.page) || 1;
+  const { items, currentPage, totalPages } = paginate(articles, page, site.articlesPerPage);
+
+  // Na primeira página, a matéria mais recente abre a editoria em destaque.
+  const [first, ...others] = items;
+  const showLead = currentPage === 1 && first !== undefined;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+    <div className="mx-auto max-w-[1280px] px-4 py-10 sm:px-6 lg:px-8">
       <Breadcrumbs
-        items={[
-          { label: "Início", href: "/" },
-          { label: "Categorias" },
-          { label: category.name },
-        ]}
+        items={[{ label: "Início", href: "/" }, { label: "Editorias" }, { label: category.name }]}
       />
 
-      <header className="mt-6 max-w-2xl">
-        <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-soft text-brand-dark">
-          <CategoryIcon icon={category.icon} className="h-6 w-6" />
-        </span>
-        <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">{category.name}</h1>
-        <p className="mt-3 text-base leading-relaxed text-muted">{category.description}</p>
+      <header className="mt-8 max-w-3xl border-b-2 border-ink pb-8">
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand">Editoria</p>
+        <h1 className="mt-3 font-serif text-4xl font-bold leading-[1.05] tracking-[-0.015em] sm:text-5xl">
+          {category.name}
+        </h1>
+        <p className="mt-4 text-base leading-relaxed text-muted">{category.description}</p>
       </header>
 
       <div className="mt-10">
         {items.length === 0 ? (
           <EmptyState
-            title="Ainda não há artigos nesta categoria"
+            title="Ainda não há artigos nesta editoria"
             message={`Os próximos artigos de ${category.name} aparecerão aqui assim que forem publicados.`}
           />
+        ) : showLead ? (
+          <>
+            <LeadStory article={first} />
+            {others.length > 0 && (
+              <div className="mt-14 border-t-2 border-ink">
+                {others.map((article) => (
+                  <HorizontalStory key={article.slug} article={article} />
+                ))}
+              </div>
+            )}
+          </>
         ) : (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div>
             {items.map((article) => (
-              <ArticleCard key={article.slug} article={article} />
+              <HorizontalStory key={article.slug} article={article} />
             ))}
           </div>
         )}

@@ -23,23 +23,30 @@ export function Pagination({
   };
 
   const linkClass =
-    "flex h-11 min-w-11 items-center justify-center rounded-lg border border-line bg-surface px-3 text-sm font-medium text-ink hover:border-brand hover:text-brand-dark";
+    "flex h-11 items-center gap-1 border-b-2 border-transparent px-1 text-xs font-bold uppercase tracking-[0.14em] text-ink transition-colors duration-200 hover:border-brand hover:text-brand-dark";
 
   return (
-    <nav aria-label="Paginação" className="mt-10 flex items-center justify-center gap-2">
-      {currentPage > 1 && (
-        <Link href={hrefFor(currentPage - 1)} className={linkClass} rel="prev">
-          ← Anterior
-        </Link>
-      )}
-      <p className="px-3 text-sm text-muted">
+    <nav
+      aria-label="Paginação"
+      className="mt-12 flex items-center justify-between border-t-2 border-ink pt-2"
+    >
+      <div>
+        {currentPage > 1 && (
+          <Link href={hrefFor(currentPage - 1)} className={linkClass} rel="prev">
+            ← Anterior
+          </Link>
+        )}
+      </div>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
         Página {currentPage} de {totalPages}
       </p>
-      {currentPage < totalPages && (
-        <Link href={hrefFor(currentPage + 1)} className={linkClass} rel="next">
-          Próxima →
-        </Link>
-      )}
+      <div>
+        {currentPage < totalPages && (
+          <Link href={hrefFor(currentPage + 1)} className={linkClass} rel="next">
+            Próxima →
+          </Link>
+        )}
+      </div>
     </nav>
   );
 }

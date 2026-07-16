@@ -1,15 +1,19 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCategory } from "@/config/categories";
 import { site, absoluteUrl } from "@/config/site";
 import { getArticle, getArticles, getRelatedArticles } from "@/lib/articles";
 import { getTableOfContents } from "@/lib/toc";
 import { formatDate } from "@/lib/format";
-import { ArticleCard, CategoryBadge } from "@/components/ArticleCard";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { JsonLd } from "@/components/JsonLd";
-import { TableOfContents } from "@/components/TableOfContents";
+import { ReadingProgress } from "@/components/ReadingProgress";
+import { ShareRail } from "@/components/ShareRail";
+import { MobileToc, TocList } from "@/components/TableOfContents";
+import { TextStory } from "@/components/stories";
+import { AdSlot } from "@/components/mdx";
 import { MdxContent } from "@/components/mdx/MdxContent";
 
 export function generateStaticParams() {
@@ -57,6 +61,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
   const related = getRelatedArticles(article);
   const toc = getTableOfContents(article.content);
   const wasUpdated = article.updatedAt !== article.publishedAt;
+  const articleUrl = absoluteUrl(`/artigos/${article.slug}`);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -67,16 +72,18 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
     datePublished: article.publishedAt,
     dateModified: article.updatedAt,
     inLanguage: site.locale,
-    mainEntityOfPage: absoluteUrl(`/artigos/${article.slug}`),
+    mainEntityOfPage: articleUrl,
     author: { "@type": "Organization", name: article.author },
     publisher: { "@type": "Organization", name: site.name, url: site.url },
   };
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
+    <div className="mx-auto max-w-[1280px] px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
+      <ReadingProgress />
       <JsonLd data={jsonLd} />
 
-      <article className="mx-auto max-w-[720px]">
+      {/* Abertura centrada, com imagem mais larga que a coluna de texto */}
+      <header className="mx-auto max-w-[880px] text-center">
         <Breadcrumbs
           items={[
             { label: "Início", href: "/" },
@@ -84,62 +91,113 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
             ...(category ? [{ label: category.name, href: `/categoria/${category.slug}` }] : []),
             { label: article.title },
           ]}
+          align="center"
         />
+        <p className="mt-8 text-xs font-bold uppercase tracking-[0.2em] text-brand">
+          {category?.name}
+        </p>
+        <h1 className="mt-4 font-serif text-4xl font-bold leading-[1.05] tracking-[-0.015em] sm:text-5xl lg:text-[3.75rem]">
+          {article.title}
+        </h1>
+        <p className="mx-auto mt-6 max-w-[640px] text-lg leading-relaxed text-muted">
+          {article.description}
+        </p>
+        <div className="mx-auto mt-8 flex max-w-[640px] flex-wrap items-center justify-center gap-x-4 gap-y-1 border-y border-line py-3.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
+          <span className="text-ink">{article.author}</span>
+          <span aria-hidden="true" className="text-line">|</span>
+          <time dateTime={article.publishedAt}>{formatDate(article.publishedAt)}</time>
+          {wasUpdated && (
+            <>
+              <span aria-hidden="true" className="text-line">|</span>
+              <span>
+                Atualizado{" "}
+                <time dateTime={article.updatedAt}>{formatDate(article.updatedAt)}</time>
+              </span>
+            </>
+          )}
+          <span aria-hidden="true" className="text-line">|</span>
+          <span>{article.readingTimeMinutes} min de leitura</span>
+        </div>
+      </header>
 
-        <header className="mt-6">
-          <CategoryBadge slug={article.category} />
-          <h1 className="mt-4 text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
-            {article.title}
-          </h1>
-          <p className="mt-4 text-lg leading-relaxed text-muted">{article.description}</p>
+      <figure className="relative mx-auto mt-10 aspect-[16/9] max-w-[1080px] overflow-hidden bg-ink">
+        <Image
+          src={article.coverImage}
+          alt={article.coverImageAlt}
+          fill
+          priority
+          sizes="(max-width: 1080px) 100vw, 1080px"
+          className="object-cover"
+        />
+      </figure>
 
-          <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1 border-y border-line py-4 text-sm text-muted">
-            <span className="font-semibold text-ink">{article.author}</span>
-            <span aria-hidden="true">·</span>
-            <span>
-              Publicado em <time dateTime={article.publishedAt}>{formatDate(article.publishedAt)}</time>
-            </span>
-            {wasUpdated && (
-              <>
-                <span aria-hidden="true">·</span>
-                <span>
-                  Atualizado em <time dateTime={article.updatedAt}>{formatDate(article.updatedAt)}</time>
-                </span>
-              </>
-            )}
-            <span aria-hidden="true">·</span>
-            <span>{article.readingTimeMinutes} min de leitura</span>
+      {/* Corpo em três colunas no desktop: compartilhar / texto / índice */}
+      <div className="mx-auto mt-10 max-w-[1160px] lg:grid lg:grid-cols-[56px_minmax(0,1fr)_280px] lg:gap-12">
+        <div className="hidden lg:block">
+          <div className="sticky top-10">
+            <ShareRail url={articleUrl} title={article.title} />
           </div>
-        </header>
-
-        <figure className="relative mt-8 aspect-[16/9] overflow-hidden rounded-2xl border border-line">
-          <Image
-            src={article.coverImage}
-            alt={article.coverImageAlt}
-            fill
-            priority
-            sizes="(max-width: 768px) 100vw, 720px"
-            className="object-cover"
-          />
-        </figure>
-
-        <div className="mt-8">
-          <TableOfContents entries={toc} />
         </div>
 
-        <div className="article-body mt-8">
-          <MdxContent source={article.content} />
+        <div className="mx-auto w-full max-w-[720px]">
+          <div className="mb-8 lg:hidden">
+            <MobileToc entries={toc} />
+          </div>
+          <div className="mb-8 lg:hidden">
+            <ShareRail url={articleUrl} title={article.title} />
+          </div>
+          <div className="article-body">
+            <MdxContent source={article.content} />
+          </div>
         </div>
-      </article>
 
+        <aside className="hidden lg:block" aria-label="Complementos do artigo">
+          <div className="sticky top-10 space-y-10">
+            {toc.length >= 2 && (
+              <nav aria-label="Índice do artigo">
+                <p className="border-t-2 border-ink pt-3 text-[11px] font-bold uppercase tracking-[0.18em]">
+                  Neste artigo
+                </p>
+                <div className="mt-4">
+                  <TocList entries={toc} />
+                </div>
+              </nav>
+            )}
+            {related.length > 0 && (
+              <nav aria-label="Artigos relacionados">
+                <p className="border-t-2 border-ink pt-3 text-[11px] font-bold uppercase tracking-[0.18em]">
+                  Relacionados
+                </p>
+                <ul className="mt-4 space-y-4">
+                  {related.map((item) => (
+                    <li key={item.slug} className="border-b border-line pb-4 last:border-b-0">
+                      <Link
+                        href={`/artigos/${item.slug}`}
+                        className="text-sm font-semibold leading-snug transition-colors duration-200 hover:text-brand-dark"
+                      >
+                        {item.title}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            )}
+            <AdSlot slot="artigo-lateral" />
+          </div>
+        </aside>
+      </div>
+
+      {/* Relacionados no fim da página para telas menores */}
       {related.length > 0 && (
-        <section aria-labelledby="relacionados" className="mx-auto mt-16 max-w-6xl">
-          <h2 id="relacionados" className="mb-6 border-b border-line pb-3 text-xl font-bold tracking-tight sm:text-2xl">
-            Leia também
-          </h2>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {related.map((relatedArticle) => (
-              <ArticleCard key={relatedArticle.slug} article={relatedArticle} />
+        <section aria-labelledby="relacionados" className="mt-16 lg:hidden">
+          <div className="border-t-2 border-ink pt-3">
+            <h2 id="relacionados" className="text-sm font-bold uppercase tracking-[0.18em]">
+              Leia também
+            </h2>
+          </div>
+          <div className="mt-8 grid gap-10 sm:grid-cols-3">
+            {related.map((item) => (
+              <TextStory key={item.slug} article={item} />
             ))}
           </div>
         </section>

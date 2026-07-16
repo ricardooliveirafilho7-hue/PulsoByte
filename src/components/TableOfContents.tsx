@@ -1,16 +1,34 @@
 import type { TocEntry } from "@/lib/toc";
 
-/** Índice do artigo. Usa <details>: recolhível no celular sem JavaScript. */
-export function TableOfContents({ entries }: { entries: TocEntry[] }) {
+/** Lista de links do índice, compartilhada pelas versões mobile e desktop. */
+export function TocList({ entries }: { entries: TocEntry[] }) {
+  return (
+    <ol className="space-y-1 text-sm">
+      {entries.map((entry) => (
+        <li key={entry.id} className={entry.level === 3 ? "pl-4" : ""}>
+          <a
+            href={`#${entry.id}`}
+            className="block border-l-2 border-transparent py-1 pl-3 text-muted transition-colors duration-200 hover:border-brand hover:text-ink"
+          >
+            {entry.text}
+          </a>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/** Índice recolhível para o celular, sem JavaScript. */
+export function MobileToc({ entries }: { entries: TocEntry[] }) {
   if (entries.length < 2) return null;
 
   return (
-    <details className="group rounded-xl border border-line bg-brand-soft/50 open:pb-4" open>
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-5 py-4 text-sm font-bold text-ink [&::-webkit-details-marker]:hidden">
+    <details className="group border-y border-line open:pb-4">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-2 py-4 text-xs font-bold uppercase tracking-[0.16em] [&::-webkit-details-marker]:hidden">
         Neste artigo
         <svg
           viewBox="0 0 24 24"
-          className="h-4 w-4 text-muted transition-transform group-open:rotate-180"
+          className="h-4 w-4 text-muted transition-transform duration-200 group-open:rotate-180"
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
@@ -21,18 +39,7 @@ export function TableOfContents({ entries }: { entries: TocEntry[] }) {
         </svg>
       </summary>
       <nav aria-label="Índice do artigo">
-        <ol className="space-y-1 px-5 text-sm">
-          {entries.map((entry) => (
-            <li key={entry.id} className={entry.level === 3 ? "pl-4" : ""}>
-              <a
-                href={`#${entry.id}`}
-                className="block py-1 text-muted hover:text-brand-dark hover:underline"
-              >
-                {entry.text}
-              </a>
-            </li>
-          ))}
-        </ol>
+        <TocList entries={entries} />
       </nav>
     </details>
   );

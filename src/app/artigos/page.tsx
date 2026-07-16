@@ -3,7 +3,7 @@ import Link from "next/link";
 import { categories, getCategory } from "@/config/categories";
 import { site } from "@/config/site";
 import { getArticles, paginate } from "@/lib/articles";
-import { ArticleCard } from "@/components/ArticleCard";
+import { HorizontalStory } from "@/components/stories";
 import { EmptyState } from "@/components/EmptyState";
 import { Pagination } from "@/components/Pagination";
 import { SearchForm } from "@/components/SearchForm";
@@ -31,27 +31,33 @@ export default async function ArticlesPage({
   const { items, currentPage, totalPages } = paginate(filtered, page, site.articlesPerPage);
 
   const filterClass = (active: boolean) =>
-    `inline-flex h-9 items-center rounded-full border px-3.5 text-sm font-medium ${
+    `inline-block border-b-2 pb-1.5 text-xs font-bold uppercase tracking-[0.14em] transition-colors duration-200 ${
       active
-        ? "border-brand bg-brand text-white"
-        : "border-line bg-surface text-muted hover:border-brand hover:text-brand-dark"
+        ? "border-brand text-ink"
+        : "border-transparent text-muted hover:border-line hover:text-ink"
     }`;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <header className="max-w-2xl">
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Todos os artigos</h1>
-        <p className="mt-3 text-base leading-relaxed text-muted">
+    <div className="mx-auto max-w-[1280px] px-4 py-10 sm:px-6 lg:px-8">
+      <header className="max-w-3xl">
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand">Arquivo</p>
+        <h1 className="mt-3 font-serif text-4xl font-bold leading-[1.05] tracking-[-0.015em] sm:text-5xl">
+          Todos os artigos
+        </h1>
+        <p className="mt-4 text-base leading-relaxed text-muted">
           As publicações mais recentes do PulsoByte, em ordem cronológica. Use a busca ou filtre
-          por categoria.
+          por editoria.
         </p>
       </header>
 
-      <div className="mt-8">
+      <div className="mt-8 max-w-xl">
         <SearchForm />
       </div>
 
-      <nav aria-label="Filtrar por categoria" className="mt-6 flex flex-wrap gap-2">
+      <nav
+        aria-label="Filtrar por editoria"
+        className="mt-10 flex flex-wrap gap-x-7 gap-y-3 border-b border-line pb-0"
+      >
         <Link href="/artigos" className={filterClass(!activeCategory)}>
           Todas
         </Link>
@@ -66,20 +72,22 @@ export default async function ArticlesPage({
         ))}
       </nav>
 
-      <div className="mt-8">
+      <div className="mt-2">
         {items.length === 0 ? (
-          <EmptyState
-            title="Nenhum artigo por aqui ainda"
-            message={
-              activeCategory
-                ? `Ainda não há artigos publicados em ${activeCategory.name}.`
-                : "Ainda não há artigos publicados."
-            }
-          />
+          <div className="mt-8">
+            <EmptyState
+              title="Nenhum artigo por aqui ainda"
+              message={
+                activeCategory
+                  ? `Ainda não há artigos publicados em ${activeCategory.name}.`
+                  : "Ainda não há artigos publicados."
+              }
+            />
+          </div>
         ) : (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div>
             {items.map((article) => (
-              <ArticleCard key={article.slug} article={article} />
+              <HorizontalStory key={article.slug} article={article} />
             ))}
           </div>
         )}

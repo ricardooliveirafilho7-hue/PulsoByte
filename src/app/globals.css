@@ -1,15 +1,15 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #f7f8fc;
+  --color-background: #f4f3ef;
   --color-surface: #ffffff;
-  --color-ink: #0b0d12;
-  --color-muted: #626978;
-  --color-line: #e5e7ee;
-  --color-brand: #4f63ff;
-  --color-brand-dark: #3345db;
-  --color-brand-soft: #eef0ff;
-  --color-cyan: #20c9d6;
+  --color-ink: #09090b;
+  --color-muted: #60636b;
+  --color-line: #d9d9d4;
+  --color-brand: #5362ff;
+  --color-brand-dark: #3945e0;
+  --color-brand-soft: #ebedff;
+  --color-cyan: #16c7ce;
 
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-source-serif), ui-serif, Georgia, serif;
@@ -42,12 +42,16 @@ body {
 :focus-visible {
   outline: 2px solid var(--color-brand);
   outline-offset: 2px;
-  border-radius: 2px;
 }
 
 ::selection {
-  background-color: var(--color-brand-soft);
-  color: var(--color-brand-dark);
+  background-color: var(--color-brand);
+  color: #ffffff;
+}
+
+/* Regra dupla editorial, usada para fechar o cabeçalho e abrir seções fortes */
+.rule-double {
+  border-top: 3px double var(--color-ink);
 }
 
 /* ---------------------------------------------------------------------------
@@ -56,8 +60,8 @@ body {
 
 .article-body {
   font-family: var(--font-serif);
-  font-size: 1.125rem; /* 18px */
-  line-height: 1.75;
+  font-size: 1.155rem; /* ~18.5px */
+  line-height: 1.78;
   color: var(--color-ink);
   overflow-wrap: break-word;
 }
@@ -70,31 +74,34 @@ body {
 .article-body h3 {
   font-family: var(--font-sans);
   font-weight: 700;
-  line-height: 1.25;
+  line-height: 1.2;
   color: var(--color-ink);
-  scroll-margin-top: 6rem;
+  scroll-margin-top: 5rem;
   text-wrap: balance;
 }
 
 .article-body h2 {
-  font-size: 1.625rem;
-  margin-top: 2.25em;
+  font-size: 1.75rem;
+  margin-top: 2.4em;
+  letter-spacing: -0.01em;
 }
 
 .article-body h3 {
   font-size: 1.25rem;
-  margin-top: 1.75em;
+  margin-top: 1.8em;
 }
 
 .article-body a {
-  color: var(--color-brand-dark);
+  color: var(--color-ink);
   text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--color-brand) 40%, transparent);
+  text-decoration-color: var(--color-brand);
+  text-decoration-thickness: 1.5px;
   text-underline-offset: 3px;
+  transition: color 180ms ease;
 }
 
 .article-body a:hover {
-  text-decoration-color: var(--color-brand);
+  color: var(--color-brand-dark);
 }
 
 .article-body strong {
@@ -103,11 +110,11 @@ body {
 
 .article-body ul,
 .article-body ol {
-  padding-left: 1.5rem;
+  padding-left: 1.4rem;
 }
 
 .article-body ul {
-  list-style: disc;
+  list-style: square;
 }
 
 .article-body ol {
@@ -123,10 +130,11 @@ body {
 }
 
 .article-body blockquote {
-  border-left: 3px solid var(--color-brand);
-  padding-left: 1.25rem;
+  border-left: 2px solid var(--color-ink);
+  padding-left: 1.5rem;
+  font-size: 1.25rem;
   font-style: italic;
-  color: var(--color-muted);
+  color: var(--color-ink);
 }
 
 .article-body hr {
@@ -138,8 +146,8 @@ body {
 /* Tabelas roláveis em telas pequenas */
 .article-body .table-wrap {
   overflow-x: auto;
-  border: 1px solid var(--color-line);
-  border-radius: 0.75rem;
+  border-top: 2px solid var(--color-ink);
+  border-bottom: 1px solid var(--color-line);
   background-color: var(--color-surface);
 }
 
@@ -161,8 +169,10 @@ body {
 }
 
 .article-body thead th {
-  background-color: var(--color-brand-soft);
-  color: var(--color-brand-dark);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-muted);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -176,15 +186,13 @@ body {
   font-size: 0.875em;
   background-color: var(--color-brand-soft);
   color: var(--color-brand-dark);
-  border-radius: 0.375rem;
   padding: 0.15em 0.4em;
 }
 
 .article-body pre {
   background-color: var(--color-ink);
-  color: #e6e9f2;
-  border-radius: 0.75rem;
-  padding: 1rem 1.25rem;
+  color: #e8e8ec;
+  padding: 1.1rem 1.25rem;
   overflow-x: auto;
   font-size: 0.875rem;
   line-height: 1.65;
@@ -194,12 +202,10 @@ body {
   background: transparent;
   color: inherit;
   padding: 0;
-  border-radius: 0;
   font-size: inherit;
 }
 
 .article-body figure img {
-  border-radius: 0.75rem;
   border: 1px solid var(--color-line);
 }
 
@@ -207,5 +213,5 @@ body {
   font-family: var(--font-sans);
   font-size: 0.8125rem;
   color: var(--color-muted);
-  margin-top: 0.5rem;
+  margin-top: 0.55rem;
 }
