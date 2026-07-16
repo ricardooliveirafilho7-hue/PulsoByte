@@ -39,6 +39,11 @@ export function MdxContent({ source }: { source: string }) {
       source={source}
       components={components}
       options={{
+        // Os artigos são arquivos locais do repositório, compilados no build —
+        // conteúdo confiável, não entrada de usuários. blockJS: false permite as
+        // props JSX dos componentes (ex.: items={[...]}); blockDangerousJS segue
+        // ativo (padrão da v6) e bloqueia eval, process, constructor etc.
+        blockJS: false,
         mdxOptions: {
           remarkPlugins: [remarkGfm],
           rehypePlugins: [rehypeSlug],

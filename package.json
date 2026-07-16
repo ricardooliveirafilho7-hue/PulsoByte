@@ -15,7 +15,7 @@
     "github-slugger": "^2.0.0",
     "gray-matter": "^4.0.3",
     "next": "^15.3.4",
-    "next-mdx-remote": "^5.0.0",
+    "next-mdx-remote": "^6.0.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "rehype-slug": "^6.0.0",
