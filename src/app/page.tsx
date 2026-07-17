@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { categories } from "@/config/categories";
 import { site, absoluteUrl } from "@/config/site";
+import { contentTypeLabels, difficultyLabels } from "@/config/editorial";
 import { getArticles, type Article } from "@/lib/articles";
+import { getTrails } from "@/lib/trails";
 import {
   ComparisonStory,
   HorizontalStory,
@@ -48,7 +50,7 @@ function SectionHeader({
 function Radar({ articles }: { articles: Article[] }) {
   if (articles.length === 0) return null;
   return (
-    <div className="border-b border-line bg-surface">
+    <div className="border-b border-line bg-surface" data-focus-hide>
       <div className="mx-auto flex max-w-[1280px] items-center gap-4 overflow-x-auto px-4 py-2.5 sm:px-6 lg:px-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <span className="flex shrink-0 items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-brand">
           <span className="h-1.5 w-1.5 bg-brand" aria-hidden="true" />
@@ -133,7 +135,21 @@ export default function HomePage() {
   const guias = claim((a) => a.category === "guias", 2, 4);
   const comparativos = claim((a) => a.category === "comparativos", 2, 2);
   const negocios = claim((a) => a.category === "negocios-digitais", 2, 3);
+
+  // “Vale entender”: curadoria duradoura. Prefere artigos evergreen ainda não
+  // usados em outras seções, mas pode repetir um essencial — é o ponto da
+  // seção: esse conteúdo não deve desaparecer da capa.
+  const valePool = rest.filter(
+    (a) => a.evergreen && ["explainer", "guide", "comparison"].includes(a.contentType)
+  );
+  const vale = [
+    ...valePool.filter((a) => !used.has(a.slug)),
+    ...valePool.filter((a) => used.has(a.slug)),
+  ].slice(0, 4);
+  vale.forEach((a) => used.add(a.slug));
+
   const flow = rest.filter((a) => !used.has(a.slug)).slice(0, 5);
+  const trilhas = getTrails();
 
   return (
     <>
@@ -186,14 +202,104 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* Fluxo geral: lista horizontal, sem grade de cards */}
+        {/* “Agora”: fluxo cronológico simples, sem cards */}
         {flow.length > 0 && (
           <section aria-labelledby="secao-fluxo" className="mt-16 lg:mt-20">
-            <SectionHeader title="Últimas publicações" href="/artigos" />
-            <h2 id="secao-fluxo" className="sr-only">Últimas publicações</h2>
+            <SectionHeader title="Agora" href="/artigos" />
+            <h2 id="secao-fluxo" className="sr-only">Publicações recentes</h2>
             <div className="border-t border-line">
               {flow.map((article) => (
                 <HorizontalStory key={article.slug} article={article} />
+              ))}
+            </div>
+            <Link
+              href="/artigos"
+              className="mt-6 inline-flex h-11 items-center border border-ink px-6 text-xs font-bold uppercase tracking-[0.14em] text-ink transition-colors duration-200 hover:border-brand hover:text-brand-dark"
+            >
+              Carregar mais publicações
+            </Link>
+          </section>
+        )}
+
+        {/* “Vale entender”: curadoria de conteúdo duradouro */}
+        {vale.length >= 3 && (
+          <section aria-labelledby="secao-vale" className="mt-16 lg:mt-20">
+            <SectionHeader title="Vale entender" accent />
+            <h2 id="secao-vale" className="sr-only">Vale entender</h2>
+            <p className="-mt-4 mb-8 max-w-2xl text-sm leading-relaxed text-muted">
+              Explicadores, guias e comparativos que continuam úteis muito depois da publicação.
+            </p>
+            <ol className="grid gap-x-12 sm:grid-cols-2">
+              {vale.map((article, index) => (
+                <li
+                  key={article.slug}
+                  className="group relative grid grid-cols-[40px_1fr] gap-4 border-b border-line py-6 sm:grid-cols-[48px_1fr]"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="font-serif text-3xl font-bold leading-none text-line transition-colors duration-200 group-hover:text-brand sm:text-4xl"
+                  >
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">
+                      {contentTypeLabels[article.contentType]}
+                      <span className="text-muted"> · {article.readingTimeMinutes} min</span>
+                    </p>
+                    <h3 className="mt-2 font-serif text-lg font-bold leading-snug sm:text-xl">
+                      <Link href={`/artigos/${article.slug}`} className="after:absolute after:inset-0">
+                        <span className="transition-colors duration-200 group-hover:text-brand-dark">
+                          {article.title}
+                        </span>
+                      </Link>
+                    </h3>
+                    <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted">
+                      {article.description}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
+        )}
+
+        {/* Trilhas: sequências curadas para aprender um tema do zero */}
+        {trilhas.length > 0 && (
+          <section aria-labelledby="secao-trilhas" className="mt-16 lg:mt-20">
+            <SectionHeader title="Trilhas de leitura" />
+            <h2 id="secao-trilhas" className="sr-only">Trilhas de leitura</h2>
+            <div className="grid gap-12 lg:grid-cols-2">
+              {trilhas.map((trail) => (
+                <article key={trail.slug} className="border-l-2 border-brand pl-6 sm:pl-8">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">
+                    Trilha · {trail.articles.length} artigos ·{" "}
+                    {difficultyLabels[trail.level]} · ~{trail.totalMinutes} min no total
+                  </p>
+                  <h3 className="mt-3 font-serif text-2xl font-bold leading-snug tracking-[-0.01em] sm:text-3xl">
+                    {trail.title}
+                  </h3>
+                  <p className="mt-3 text-sm leading-relaxed text-muted sm:text-base">
+                    {trail.objective}
+                  </p>
+                  <ol className="mt-5 space-y-2.5">
+                    {trail.articles.map((article, index) => (
+                      <li key={article.slug} className="flex gap-3 text-sm leading-snug">
+                        <span
+                          aria-hidden="true"
+                          className="w-5 shrink-0 font-serif font-bold text-muted"
+                        >
+                          {index + 1}.
+                        </span>
+                        <Link
+                          href={`/artigos/${article.slug}`}
+                          className="font-semibold transition-colors duration-200 hover:text-brand-dark"
+                        >
+                          {article.title}
+                        </Link>
+                      </li>
+                    ))}
+                  </ol>
+                </article>
               ))}
             </div>
           </section>

@@ -9,6 +9,7 @@ import {
   reviewStatusLabels,
 } from "@/config/editorial";
 import { getArticle, getArticles, getRelatedArticles } from "@/lib/articles";
+import { getTrailForArticle } from "@/lib/trails";
 import { SaveArticleButton } from "@/components/interactive/SaveArticleButton";
 import { getTableOfContents } from "@/lib/toc";
 import { formatDate } from "@/lib/format";
@@ -64,6 +65,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
   if (!article) notFound();
 
   const category = getCategory(article.category);
+  const trailInfo = getTrailForArticle(article.slug);
   const related = getRelatedArticles(article);
   const toc = getTableOfContents(article.content);
   const wasUpdated = article.updatedAt !== article.publishedAt;
@@ -181,10 +183,52 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           <div className="article-body">
             <MdxContent source={article.content} />
           </div>
+          {trailInfo?.next && (
+            <nav
+              aria-label="Trilha de leitura"
+              data-focus-hide
+              className="mt-10 border-t-2 border-brand pt-3 lg:hidden"
+            >
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-dark">
+                Trilha · {trailInfo.trail.title}
+              </p>
+              <p className="mt-3 text-sm leading-snug">
+                <span className="text-muted">Próximo passo: </span>
+                <Link
+                  href={`/artigos/${trailInfo.next.slug}`}
+                  className="font-semibold transition-colors duration-200 hover:text-brand-dark"
+                >
+                  {trailInfo.next.title}
+                </Link>
+              </p>
+            </nav>
+          )}
         </div>
 
         <aside className="hidden lg:block" aria-label="Complementos do artigo">
           <div className="sticky top-10 space-y-10">
+            {trailInfo && (
+              <nav aria-label="Trilha de leitura" data-focus-hide>
+                <p className="border-t-2 border-brand pt-3 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-dark">
+                  Trilha · {trailInfo.trail.title}
+                </p>
+                {trailInfo.next ? (
+                  <p className="mt-3 text-sm leading-snug">
+                    <span className="text-muted">Próximo passo: </span>
+                    <Link
+                      href={`/artigos/${trailInfo.next.slug}`}
+                      className="font-semibold transition-colors duration-200 hover:text-brand-dark"
+                    >
+                      {trailInfo.next.title}
+                    </Link>
+                  </p>
+                ) : (
+                  <p className="mt-3 text-sm leading-snug text-muted">
+                    Você chegou ao fim desta trilha.
+                  </p>
+                )}
+              </nav>
+            )}
             {toc.length >= 2 && (
               <nav aria-label="Índice do artigo">
                 <p className="border-t-2 border-ink pt-3 text-[11px] font-bold uppercase tracking-[0.18em]">
