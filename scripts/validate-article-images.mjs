@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import crypto from "node:crypto";
 import matter from "gray-matter";
 import sharp from "sharp";
 
@@ -18,14 +19,20 @@ const validTypes = new Set([
 const requiredFields = [
   "coverImage",
   "coverImageAlt",
+  "coverImageCaption",
   "coverImageCredit",
+  "coverImageCreditUrl",
   "coverImageSource",
+  "coverImageLicense",
   "coverImageType",
   "coverImagePosition",
 ];
 
 const errors = [];
 const usedImages = new Map();
+const usedHashes = new Map();
+const perceptualHashes = [];
+const warnings = [];
 
 function report(slug, field, problem, correction) {
   errors.push(`Erro no artigo "${slug}":\n${field}: ${problem}\nCorreção necessária: ${correction}`);
@@ -70,8 +77,28 @@ for (const fileName of fs.readdirSync(articlesDir).filter((name) => name.endsWit
     continue;
   }
 
+  if (path.extname(imagePath).toLowerCase() !== ".webp") {
+    report(slug, "coverImage", "a extensão não é .webp.", "converta a capa para WebP.");
+  }
+  const size = fs.statSync(imagePath).size;
+  if (size > 500 * 1024) {
+    report(slug, "coverImage", `arquivo tem ${(size / 1024).toFixed(1)} KB.`, "comprima para no máximo 500 KB.");
+  }
+
+  const bytes = fs.readFileSync(imagePath);
+  const digest = crypto.createHash("sha256").update(bytes).digest("hex");
+  const previousHashSlug = usedHashes.get(digest);
+  if (previousHashSlug) {
+    report(slug, "coverImage", `bytes idênticos à capa de "${previousHashSlug}".`, "use uma capa editorial exclusiva.");
+  } else {
+    usedHashes.set(digest, slug);
+  }
+
   try {
     const metadata = await sharp(imagePath).metadata();
+    if (metadata.format !== "webp") {
+      report(slug, "coverImage", `formato real detectado: ${metadata.format ?? "desconhecido"}.`, "gere WebP verdadeiro.");
+    }
     if (!metadata.width || !metadata.height || metadata.width < 1200 || metadata.height < 675) {
       report(
         slug,
@@ -80,8 +107,36 @@ for (const fileName of fs.readdirSync(articlesDir).filter((name) => name.endsWit
         "substitua por uma imagem com pelo menos 1200x675 px."
       );
     }
+    if (metadata.width && metadata.height && metadata.width * 9 !== metadata.height * 16) {
+      report(slug, "coverImage", `proporção ${metadata.width}x${metadata.height} não é 16:9.`, "recorte para 1600x900 ou outra dimensão 16:9 acima do mínimo.");
+    }
+    if ((metadata.pages ?? 1) > 1) {
+      report(slug, "coverImage", "imagem animada não é permitida.", "gere um WebP estático.");
+    }
+    if (metadata.exif || metadata.iptc || metadata.xmp) {
+      report(slug, "coverImage", "metadados incorporados desnecessários foram encontrados.", "remova EXIF/IPTC/XMP antes de publicar.");
+    }
+
+    const { data: pixels } = await sharp(imagePath)
+      .rotate()
+      .resize(8, 8, { fit: "fill" })
+      .grayscale()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    const average = pixels.reduce((sum, value) => sum + value, 0) / pixels.length;
+    const perceptual = [...pixels].map((value) => (value >= average ? "1" : "0")).join("");
+    for (const previous of perceptualHashes) {
+      const distance = [...perceptual].reduce(
+        (total, bit, index) => total + (bit === previous.hash[index] ? 0 : 1),
+        0
+      );
+      if (distance <= 5) {
+        warnings.push(`Possível semelhança visual entre "${slug}" e "${previous.slug}" (distância ${distance}/64).`);
+      }
+    }
+    perceptualHashes.push({ slug, hash: perceptual });
   } catch (error) {
-    report(slug, "coverImage", `arquivo inválido ou ilegível (${error.message}).`, "gere novamente a imagem em WebP, AVIF, PNG ou JPEG válido.");
+    report(slug, "coverImage", `arquivo inválido ou ilegível (${error.message}).`, "gere novamente a imagem em WebP válido.");
   }
 
   const previousSlug = usedImages.get(data.coverImage);
@@ -93,6 +148,17 @@ for (const fileName of fs.readdirSync(articlesDir).filter((name) => name.endsWit
 
   if (typeof data.coverImageType === "string" && !validTypes.has(data.coverImageType)) {
     report(slug, "coverImageType", `tipo "${data.coverImageType}" inválido.`, `use um destes valores: ${[...validTypes].join(", ")}.`);
+  }
+  if (typeof data.coverImageCreditUrl === "string") {
+    try {
+      const sourceUrl = new URL(data.coverImageCreditUrl);
+      if (sourceUrl.protocol !== "https:") throw new Error("protocolo inseguro");
+      if (sourceUrl.pathname === "/" || /\/(search|s)\/?$/i.test(sourceUrl.pathname)) {
+        report(slug, "coverImageCreditUrl", "URL genérica ou de busca.", "use a página individual da imagem ou do press kit.");
+      }
+    } catch {
+      report(slug, "coverImageCreditUrl", "URL HTTPS inválida.", "use a página original individual da imagem.");
+    }
   }
   if (
     typeof data.coverImagePosition === "string" &&
@@ -107,4 +173,6 @@ if (errors.length > 0) {
   process.exit(1);
 }
 
-console.log(`Imagens editoriais validadas: ${usedImages.size} artigo(s) publicado(s).`);
+if (warnings.length > 0) console.warn(`\nAlertas de similaridade:\n${warnings.join("\n")}`);
+
+console.log(`Imagens editoriais validadas: ${usedImages.size} artigo(s) publicado(s), hashes SHA-256 únicos.`);

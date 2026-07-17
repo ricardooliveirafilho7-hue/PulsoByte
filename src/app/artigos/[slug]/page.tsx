@@ -48,7 +48,7 @@ export async function generateMetadata({
       publishedTime: article.publishedAt,
       modifiedTime: article.updatedAt,
       authors: [article.author],
-      images: [{ url: article.coverImage, alt: article.coverImageAlt }],
+      images: [{ url: article.coverImage, width: 1600, height: 900, alt: article.coverImageAlt }],
     },
     twitter: {
       card: "summary_large_image",

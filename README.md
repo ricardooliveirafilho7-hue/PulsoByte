@@ -62,6 +62,11 @@ seoDescription: "Descrição para mecanismos de busca"
 4. **Para publicar**, troque `status: "draft"` por `status: "published"`. Rascunhos nunca
    aparecem em produção, na busca nem no sitemap.
 
+Artigos automáticos seguem dois turnos em `America/Sao_Paulo`: no máximo um `morning` e um
+`evening` por data editorial. Eles também declaram `publicationSlot`, `automationRunId`,
+`topicKey`, `primaryEntity` e `searchIntent`. O contrato completo está em
+[`docs/automation-editorial.md`](docs/automation-editorial.md).
+
 A validação roda no build: campos obrigatórios ausentes, categoria inexistente ou slug
 duplicado interrompem o build com uma mensagem explicando o problema.
 
