@@ -31,6 +31,11 @@ export interface Article {
   reviewStatus: ReviewStatus;
   difficulty?: Difficulty;
   evergreen: boolean;
+  publicationSlot?: "morning" | "evening";
+  automationRunId?: string;
+  topicKey?: string;
+  primaryEntity?: string;
+  searchIntent?: "informational" | "practical" | "comparison" | "news" | "safety";
   coverImage: string;
   coverImageAlt: string;
   coverImageCaption?: string;
@@ -160,6 +165,12 @@ function parseArticle(fileName: string): Article {
       ? data.evergreen
       : ["explainer", "guide", "comparison"].includes(contentType);
 
+  const publicationSlot = oneOf("publicationSlot", ["morning", "evening"] as const);
+  const searchIntent = oneOf(
+    "searchIntent",
+    ["informational", "practical", "comparison", "news", "safety"] as const
+  );
+
   const words = content.split(/\s+/).filter(Boolean).length;
 
   return {
@@ -178,6 +189,12 @@ function parseArticle(fileName: string): Article {
     reviewStatus,
     difficulty,
     evergreen,
+    publicationSlot,
+    automationRunId:
+      typeof data.automationRunId === "string" ? data.automationRunId : undefined,
+    topicKey: typeof data.topicKey === "string" ? data.topicKey : undefined,
+    primaryEntity: typeof data.primaryEntity === "string" ? data.primaryEntity : undefined,
+    searchIntent,
     coverImage: data.coverImage,
     coverImageAlt: data.coverImageAlt,
     coverImageCaption:

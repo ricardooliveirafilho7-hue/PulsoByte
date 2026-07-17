@@ -2,13 +2,17 @@
   "name": "pulsobyte",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": "20.x"
+  },
   "description": "PulsoByte — Tecnologia sem ruído. Portal editorial de tecnologia.",
   "scripts": {
     "dev": "next dev",
-    "build": "npm run validate:images && next build",
+    "build": "npm run validate:content && npm run validate:images && next build",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "validate:content": "node scripts/validate-article-content.mjs",
     "validate:images": "node scripts/validate-article-images.mjs"
   },
   "dependencies": {

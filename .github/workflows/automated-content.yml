@@ -24,7 +24,68 @@ jobs:
       - name: Checkout pull request
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Validate automated article scope
+        if: startsWith(github.event.pull_request.head.ref, 'automation/artigo-')
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ ! "${HEAD_BRANCH}" =~ ^automation/artigo-[0-9]{4}-[0-9]{2}-[0-9]{2}-(manha|noite)-[a-z0-9-]+$ ]]; then
+            echo "Invalid automated article branch: ${HEAD_BRANCH}"
+            exit 1
+          fi
+
+          mapfile -t changes < <(git diff --name-status "${BASE_SHA}"...HEAD)
+          article_count=0
+          cover_count=0
+          internal_count=0
+          article_path=""
+          cover_path=""
+
+          for change in "${changes[@]}"; do
+            status="${change%%$'\t'*}"
+            file="${change#*$'\t'}"
+            if [[ "${status}" != "A" && "${status}" != "M" ]]; then
+              echo "Only added or modified article assets are allowed: ${change}"
+              exit 1
+            fi
+            case "${file}" in
+              content/articles/*.mdx)
+                article_count=$((article_count + 1)); article_path="${file}" ;;
+              public/images/articles/*.webp)
+                name="$(basename "${file}" .webp)"
+                if [[ -f "content/articles/${name}.mdx" ]]; then
+                  cover_count=$((cover_count + 1)); cover_path="${file}"
+                else
+                  internal_count=$((internal_count + 1))
+                fi
+                ;;
+              *)
+                echo "File outside automated-content allowlist: ${file}"
+                exit 1
+                ;;
+            esac
+          done
+
+          if [[ "${article_count}" -ne 1 || "${cover_count}" -ne 1 || "${internal_count}" -gt 3 ]]; then
+            echo "Expected one article, one matching WebP cover and at most three internal images."
+            exit 1
+          fi
+
+          slug="$(basename "${article_path}" .mdx)"
+          [[ "${cover_path}" == "public/images/articles/${slug}.webp" ]] || {
+            echo "Cover filename must match article slug."
+            exit 1
+          }
+          grep -q "^slug: [\"']\?${slug}[\"']\?$" "${article_path}" || {
+            echo "Frontmatter slug does not match filename."
+            exit 1
+          }
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -34,6 +95,11 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Validate article content
+        env:
+          GITHUB_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: npm run validate:content
 
       - name: Validate article images
         run: npm run validate:images
@@ -58,7 +124,10 @@ jobs:
         startsWith(github.event.pull_request.head.ref, 'automation/artigo-')
       }}
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
+    concurrency:
+      group: automated-content-merge-${{ github.repository }}
+      cancel-in-progress: false
 
     permissions:
       contents: write
@@ -71,6 +140,8 @@ jobs:
       PR_URL: ${{ github.event.pull_request.html_url }}
       HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
 
     steps:
       - name: Confirm target is the default branch
@@ -130,8 +201,53 @@ jobs:
           echo "Timed out waiting for the Vercel preview."
           exit 1
 
+      - name: Confirm base has not changed since validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          current_base="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/${BASE_BRANCH}" --jq '.object.sha')"
+          if [[ "${current_base}" != "${BASE_SHA}" ]]; then
+            echo "Base changed from ${BASE_SHA} to ${current_base}; synchronize and validate again."
+            exit 1
+          fi
+
       - name: Squash and merge pull request
         shell: bash
         run: |
           set -euo pipefail
           gh pr merge "${PR_URL}" --squash --delete-branch
+
+      - name: Verify production publication
+        shell: bash
+        run: |
+          set -euo pipefail
+          article_path="$(
+            gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files" --paginate \
+              --jq '[.[] | select(.filename | startswith("content/articles/") and endswith(".mdx"))][0].filename'
+          )"
+          slug="$(basename "${article_path}" .mdx)"
+          merge_sha="$(gh pr view "${PR_URL}" --json mergeCommit --jq '.mergeCommit.oid')"
+
+          production_ready=false
+          for attempt in $(seq 1 60); do
+            state="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${merge_sha}/status" --jq '[.statuses[] | select(.context | test("Vercel"; "i"))][0].state // "missing"' 2>/dev/null || echo missing)"
+            echo "Production attempt ${attempt}/60 — Vercel=${state}"
+            if [[ "${state}" == "success" ]]; then
+              production_ready=true
+              break
+            fi
+            [[ "${state}" == "failure" || "${state}" == "error" ]] && exit 1
+            sleep 10
+          done
+          [[ "${production_ready}" == "true" ]] || { echo "Timed out waiting for production deployment."; exit 1; }
+
+          site="https://pulso-byte.vercel.app"
+          page="$(curl --fail --silent --show-error --retry 5 --retry-all-errors "${site}/artigos/${slug}")"
+          image_headers="$(curl --fail --silent --show-error --head --retry 5 --retry-all-errors "${site}/images/articles/${slug}.webp")"
+          sitemap="$(curl --fail --silent --show-error --retry 5 --retry-all-errors "${site}/sitemap.xml")"
+
+          grep -q '<link rel="canonical"' <<<"${page}"
+          grep -q 'application/ld+json' <<<"${page}"
+          grep -qi 'content-type: image/webp' <<<"${image_headers}"
+          grep -q "/artigos/${slug}" <<<"${sitemap}"
+          echo "Production verified for /artigos/${slug} at ${merge_sha}."
