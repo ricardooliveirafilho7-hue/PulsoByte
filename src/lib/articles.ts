@@ -2,6 +2,18 @@ import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
 import { categorySlugs } from "@/config/categories";
+import {
+  contentTypes,
+  defaultContentTypeByCategory,
+  difficulties,
+  editorialPriorities,
+  FALLBACK_CONTENT_TYPE,
+  reviewStatuses,
+  type ContentType,
+  type Difficulty,
+  type EditorialPriority,
+  type ReviewStatus,
+} from "@/config/editorial";
 
 export interface Article {
   title: string;
@@ -14,6 +26,11 @@ export interface Article {
   updatedAt: string;
   status: "draft" | "published";
   featured: boolean;
+  contentType: ContentType;
+  editorialPriority: EditorialPriority;
+  reviewStatus: ReviewStatus;
+  difficulty?: Difficulty;
+  evergreen: boolean;
   coverImage: string;
   coverImageAlt: string;
   coverImageCaption?: string;
@@ -115,6 +132,34 @@ function parseArticle(fileName: string): Article {
     );
   }
 
+  // Campos editoriais opcionais: validados quando presentes, com padrões
+  // seguros para não quebrar artigos existentes.
+  const oneOf = <T extends string>(field: string, list: readonly T[]): T | undefined => {
+    const value = data[field];
+    if (value === undefined) return undefined;
+    if (typeof value !== "string" || !list.some((item) => item === value)) {
+      throw new Error(
+        `Artigo "${fileName}": "${field}" inválido ("${String(value)}"). Use um de: ${list.join(", ")}.`
+      );
+    }
+    return value as T;
+  };
+
+  const contentType =
+    oneOf("contentType", contentTypes) ??
+    defaultContentTypeByCategory[data.category] ??
+    FALLBACK_CONTENT_TYPE;
+  const editorialPriority =
+    oneOf("editorialPriority", editorialPriorities) ??
+    (data.featured === true ? "featured" : "standard");
+  const reviewStatus =
+    oneOf("reviewStatus", reviewStatuses) ?? (data.status === "draft" ? "draft" : "reviewed");
+  const difficulty = oneOf("difficulty", difficulties);
+  const evergreen =
+    typeof data.evergreen === "boolean"
+      ? data.evergreen
+      : ["explainer", "guide", "comparison"].includes(contentType);
+
   const words = content.split(/\s+/).filter(Boolean).length;
 
   return {
@@ -128,6 +173,11 @@ function parseArticle(fileName: string): Article {
     updatedAt: data.updatedAt,
     status: data.status,
     featured: data.featured === true,
+    contentType,
+    editorialPriority,
+    reviewStatus,
+    difficulty,
+    evergreen,
     coverImage: data.coverImage,
     coverImageAlt: data.coverImageAlt,
     coverImageCaption:
@@ -191,14 +241,40 @@ export function getArticlesByCategory(categorySlug: string): Article[] {
   return getArticles().filter((article) => article.category === categorySlug);
 }
 
-/** Relacionados: mesma categoria, depois tags em comum, com data recente como desempate. */
+/**
+ * Pares de formatos complementares: além do conteúdo parecido, recomenda o
+ * próximo passo natural de leitura (ex.: depois do explicador, um guia).
+ */
+const COMPLEMENTARY: Partial<Record<Article["contentType"], Article["contentType"][]>> = {
+  explainer: ["guide", "comparison", "analysis"],
+  guide: ["explainer", "comparison"],
+  comparison: ["review", "guide", "explainer"],
+  news: ["explainer", "analysis"],
+  analysis: ["explainer", "news"],
+  review: ["comparison", "guide"],
+};
+
+/**
+ * Relacionados por score editorial: categoria e tags em comum, formato
+ * complementar, conteúdo duradouro e recência como critérios combinados.
+ */
 export function getRelatedArticles(current: Article, limit = 3): Article[] {
+  const now = Date.now();
   return getArticles()
     .filter((article) => article.slug !== current.slug)
     .map((article) => {
       const sharedTags = article.tags.filter((tag) => current.tags.includes(tag)).length;
-      const sameCategory = article.category === current.category ? 1 : 0;
-      return { article, score: sameCategory * 100 + sharedTags };
+      let score = 0;
+      if (article.category === current.category) score += 40;
+      score += Math.min(sharedTags, 3) * 15;
+      if (COMPLEMENTARY[current.contentType]?.includes(article.contentType)) score += 18;
+      else if (article.contentType === current.contentType) score += 8;
+      if (article.evergreen) score += 6;
+      const ageDays = (now - new Date(article.publishedAt).getTime()) / 86_400_000;
+      if (ageDays <= 30) score += 10;
+      else if (ageDays <= 90) score += 5;
+      if (current.difficulty && article.difficulty === current.difficulty) score += 4;
+      return { article, score };
     })
     .sort(
       (a, b) =>
@@ -216,17 +292,45 @@ function normalize(text: string): string {
     .toLowerCase();
 }
 
-/** Busca estática sobre título, descrição, categoria e tags, ignorando acentos. */
-export function searchArticles(query: string): Article[] {
+export interface SearchFilters {
+  contentType?: string;
+  category?: string;
+}
+
+/**
+ * Busca estática ignorando acentos, com peso editorial: título e descrição
+ * valem mais que o corpo do texto. Filtros opcionais de formato e editoria.
+ */
+export function searchArticles(query: string, filters: SearchFilters = {}): Article[] {
   const terms = normalize(query).split(/\s+/).filter(Boolean);
   if (terms.length === 0) return [];
 
-  return getArticles().filter((article) => {
-    const haystack = normalize(
-      [article.title, article.description, article.category, ...article.tags].join(" ")
-    );
-    return terms.every((term) => haystack.includes(term));
-  });
+  return getArticles()
+    .filter(
+      (article) =>
+        (!filters.contentType || article.contentType === filters.contentType) &&
+        (!filters.category || article.category === filters.category)
+    )
+    .map((article) => {
+      const heavy = normalize(
+        [article.title, article.description, article.category, ...article.tags].join(" ")
+      );
+      const body = normalize(article.content);
+      let score = 0;
+      for (const term of terms) {
+        if (heavy.includes(term)) score += 10;
+        else if (body.includes(term)) score += 2;
+        else return { article, score: 0 };
+      }
+      return { article, score };
+    })
+    .filter((entry) => entry.score > 0)
+    .sort(
+      (a, b) =>
+        b.score - a.score ||
+        new Date(b.article.publishedAt).getTime() - new Date(a.article.publishedAt).getTime()
+    )
+    .map((entry) => entry.article);
 }
 
 export function paginate<T>(items: T[], page: number, perPage: number) {

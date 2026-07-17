@@ -13,6 +13,23 @@ import {
   Sources,
   StepByStep,
 } from "@/components/mdx";
+import {
+  BestFor,
+  ContextBox,
+  CorrectionNote,
+  Definition,
+  FAQ,
+  FinalVerdict,
+  QuickSummary,
+  QuickVerdict,
+  Requirements,
+  Timeline,
+  Troubleshooting,
+  UpdateHistory,
+  WhatChanged,
+  WhyItMatters,
+} from "@/components/mdx/editorial";
+import { GuideChecklist } from "@/components/interactive/GuideChecklist";
 
 const components = {
   Callout,
@@ -20,10 +37,26 @@ const components = {
   ProsAndCons,
   ComparisonTable,
   Sources,
+  SourceList: Sources,
   Figure,
   Quote,
   StepByStep,
   AdSlot,
+  QuickSummary,
+  Definition,
+  ContextBox,
+  WhyItMatters,
+  WhatChanged,
+  FAQ,
+  Timeline,
+  UpdateHistory,
+  CorrectionNote,
+  Requirements,
+  Troubleshooting,
+  QuickVerdict,
+  BestFor,
+  FinalVerdict,
+  GuideChecklist,
   // Tabelas escritas em Markdown ganham rolagem horizontal em telas pequenas.
   table: (props: ComponentPropsWithoutRef<"table">) => (
     <div className="table-wrap">
