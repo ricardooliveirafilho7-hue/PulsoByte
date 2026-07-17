@@ -29,10 +29,11 @@ jobs:
           # corrompido; a versão é imutável por tag do release).
           version="1.7.7"
           base="https://github.com/rhysd/actionlint/releases/download/v${version}"
-          curl -fsSL --retry 3 -o actionlint.tar.gz "${base}/actionlint_${version}_linux_amd64.tar.gz"
+          tarball="actionlint_${version}_linux_amd64.tar.gz"
+          curl -fsSL --retry 3 -o "${tarball}" "${base}/${tarball}"
           curl -fsSL --retry 3 -o checksums.txt "${base}/actionlint_${version}_checksums.txt"
-          grep "actionlint_${version}_linux_amd64.tar.gz" checksums.txt | sha256sum -c -
-          tar -xzf actionlint.tar.gz actionlint
+          grep " ${tarball}\$" checksums.txt | sha256sum -c -
+          tar -xzf "${tarball}" actionlint
 
       - name: Run actionlint
         run: ./actionlint -color
