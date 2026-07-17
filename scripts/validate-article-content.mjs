@@ -6,7 +6,7 @@ const root = process.cwd();
 const articlesDir = path.join(root, "content", "articles");
 const categorySource = fs.readFileSync(path.join(root, "src", "config", "categories.ts"), "utf8");
 const validCategories = new Set(
-  [...categorySource.matchAll(/\bslug:\s*"([a-z0-9-]+)"/g)].map((match) => match[1])
+  [...categorySource.matchAll(/\bslug:\s*["']([a-z0-9-]+)["']/g)].map((match) => match[1])
 );
 const validContentTypes = new Set([
   "news", "explainer", "guide", "comparison", "analysis", "review", "visual-story", "opinion",
@@ -14,7 +14,31 @@ const validContentTypes = new Set([
 const validSlots = new Set(["morning", "evening"]);
 const validIntents = new Set(["informational", "practical", "comparison", "news", "safety"]);
 const allowedComponents = new Set([
-  "Callout", "KeyTakeaways", "ProsAndCons", "ComparisonTable", "Sources", "Figure", "Quote", "StepByStep", "AdSlot",
+  "AdSlot",
+  "BestFor",
+  "Callout",
+  "ComparisonTable",
+  "ContextBox",
+  "CorrectionNote",
+  "Definition",
+  "FAQ",
+  "Figure",
+  "FinalVerdict",
+  "GuideChecklist",
+  "KeyTakeaways",
+  "ProsAndCons",
+  "QuickSummary",
+  "QuickVerdict",
+  "Quote",
+  "Requirements",
+  "SourceList",
+  "Sources",
+  "StepByStep",
+  "Timeline",
+  "Troubleshooting",
+  "UpdateHistory",
+  "WhatChanged",
+  "WhyItMatters",
 ]);
 const minimumWords = {
   news: 800,
@@ -45,6 +69,21 @@ function normalize(value) {
     .trim();
 }
 
+function countVisibleWords(content) {
+  const jsxStrings = [...content.matchAll(/<[^>]+>/gs)]
+    .flatMap((match) => [...match[0].matchAll(/["']([^"']+)["']/g)].map((item) => item[1]))
+    .filter((value) => !/^https?:\/\//i.test(value));
+
+  const visible = `${content.replace(/```[\s\S]*?```/g, " ").replace(/<[^>]+>/gs, " ")} ${jsxStrings.join(" ")}`
+    .replace(/`[^`]*`/g, " ")
+    .replace(/https?:\/\/\S+/g, " ")
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, " $1 ")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, " $1 ")
+    .replace(/[{}[\]()*_#>|~=:+-]/g, " ");
+
+  return visible.match(/[\p{L}\p{N}]+(?:[’'\-][\p{L}\p{N}]+)*/gu)?.length ?? 0;
+}
+
 for (const file of fs.readdirSync(articlesDir).filter((name) => name.endsWith(".mdx")).sort()) {
   const raw = fs.readFileSync(path.join(articlesDir, file), "utf8");
   let parsed;
@@ -66,7 +105,7 @@ for (const file of fs.readdirSync(articlesDir).filter((name) => name.endsWith(".
   for (const match of content.matchAll(/<([A-Z][A-Za-z0-9]*)\b/g)) {
     if (!allowedComponents.has(match[1])) fail(file, `componente MDX não registrado: <${match[1]}>.`);
   }
-  for (const match of content.matchAll(/\]\(\/artigos\/([a-z0-9-]+)\)/g)) {
+  for (const match of content.matchAll(/\]\(\/artigos\/([a-z0-9-]+)(?:[?#][^)]*)?\)/g)) {
     const target = path.join(articlesDir, `${match[1]}.mdx`);
     if (!fs.existsSync(target)) fail(file, `link interno aponta para artigo inexistente: ${match[1]}.`);
   }
@@ -78,6 +117,7 @@ for (const file of fs.readdirSync(articlesDir).filter((name) => name.endsWith(".
         fail(file, `artigo automático exige ${field}.`);
       }
     }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(data.publishedAt ?? "")) fail(file, "publishedAt deve usar AAAA-MM-DD.");
     if (!validSlots.has(data.publicationSlot)) fail(file, "publicationSlot deve ser morning ou evening.");
     if (!validIntents.has(data.searchIntent)) fail(file, "searchIntent inválido.");
     if (data.automationRunId !== `${data.publishedAt}-${data.publicationSlot}`) {
@@ -88,12 +128,16 @@ for (const file of fs.readdirSync(articlesDir).filter((name) => name.endsWith(".
     }
     if (data.author !== "Redação PulsoByte") fail(file, "author automático deve ser Redação PulsoByte.");
     if (data.status !== "published") fail(file, "artigo automático deve chegar ao PR como published.");
-    if (!/<Sources\b/.test(content)) fail(file, "artigo automático precisa do componente Sources.");
-    const sourceUrls = [...content.matchAll(/\burl:\s*["'](https:\/\/[^"']+)["']/g)].map((m) => m[1]);
-    if (new Set(sourceUrls).size < 2) fail(file, "artigo automático precisa de pelo menos duas URLs HTTPS distintas em Sources.");
-    const words = content.replace(/<[^>]+>/g, " ").split(/\s+/).filter(Boolean).length;
+    if (!/<(?:Sources|SourceList)\b/.test(content)) {
+      fail(file, "artigo automático precisa do componente Sources ou SourceList.");
+    }
+    const sourceUrls = [...content.matchAll(/\burl:\s*["'](https:\/\/[^"']+)["']/g)].map((match) => match[1]);
+    if (new Set(sourceUrls).size < 2) {
+      fail(file, "artigo automático precisa de pelo menos duas URLs HTTPS distintas nas fontes.");
+    }
+    const words = countVisibleWords(content);
     const floor = minimumWords[data.contentType] ?? 1000;
-    if (words < floor) fail(file, `conteúdo automático tem ${words} palavras; mínimo para ${data.contentType ?? "o formato"}: ${floor}.`);
+    if (words < floor) fail(file, `conteúdo automático tem ${words} palavras visíveis; mínimo para ${data.contentType ?? "o formato"}: ${floor}.`);
     if (/\b(revolucion[aá]rio|vai mudar tudo|garantido|sem nenhum risco|100% seguro)\b/i.test(content)) {
       fail(file, "afirmação absoluta ou promocional proibida encontrada.");
     }
@@ -147,4 +191,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log(`Conteúdo validado: ${records.length} artigo(s), ${records.filter((r) => r.isAutomated).length} automático(s).`);
+console.log(`Conteúdo validado: ${records.length} artigo(s), ${records.filter((record) => record.isAutomated).length} automático(s).`);
