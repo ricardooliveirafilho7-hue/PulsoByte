@@ -91,6 +91,7 @@ export function MobileMenu() {
           <ul className="flex flex-col gap-1 text-xs font-bold uppercase tracking-[0.14em]">
             {[
               { href: "/artigos", label: "Todos os artigos" },
+              { href: "/salvos", label: "Artigos salvos" },
               { href: "/buscar", label: "Buscar" },
               { href: "/sobre", label: "Sobre" },
               { href: "/contato", label: "Contato" },

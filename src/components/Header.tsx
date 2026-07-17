@@ -5,6 +5,20 @@ import { MobileMenu } from "@/components/MobileMenu";
 import { DesktopNav } from "@/components/DesktopNav";
 import { ReadingPreferences } from "@/components/preferences/ReadingPreferences";
 
+function SavedLink({ className = "" }: { className?: string }) {
+  return (
+    <Link
+      href="/salvos"
+      aria-label="Artigos salvos"
+      className={`hidden h-11 w-11 items-center justify-center text-ink transition-colors duration-200 hover:text-brand-dark sm:flex ${className}`}
+    >
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true">
+        <path d="M6 3h12v18l-6-4.5L6 21V3Z" />
+      </svg>
+    </Link>
+  );
+}
+
 function SearchLink({ className = "" }: { className?: string }) {
   return (
     <Link
@@ -45,7 +59,7 @@ export function Header() {
       </div>
 
       {/* Masthead */}
-      <div className="mx-auto grid max-w-[1280px] grid-cols-[5.5rem_1fr_5.5rem] items-center px-4 py-2.5 sm:px-6 sm:py-4 lg:px-8 lg:py-7">
+      <div className="mx-auto grid max-w-[1280px] grid-cols-[5.5rem_1fr_5.5rem] sm:grid-cols-[8.25rem_1fr_8.25rem] items-center px-4 py-2.5 sm:px-6 sm:py-4 lg:px-8 lg:py-7">
         <div className="flex items-center justify-self-start">
           <MobileMenu />
         </div>
@@ -58,6 +72,7 @@ export function Header() {
         </Link>
         <div className="flex items-center justify-self-end">
           <ReadingPreferences />
+          <SavedLink />
           <SearchLink />
         </div>
       </div>
