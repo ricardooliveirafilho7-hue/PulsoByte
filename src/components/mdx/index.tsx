@@ -217,11 +217,14 @@ export function StepByStep({ steps }: { steps: { title: string; description: str
 
 /**
  * Posição reservada de anúncio.
- * Com o AdSense desativado (variável de ambiente vazia) não renderiza nada:
- * sem scripts, sem espaço vazio e sem mudança de layout.
+ * Só renderiza com o AdSense ativo E um ID numérico real de unidade de
+ * anúncio (ex.: "1234567890"). Placeholders como "artigo-meio" não
+ * renderizam nada: sem <ins> inválido, sem espaço vazio e sem mudança de
+ * layout — os anúncios automáticos do AdSense continuam funcionando via
+ * script global.
  */
 export function AdSlot({ slot }: { slot: string }) {
-  if (!site.adsenseClient) return null;
+  if (!site.adsenseClient || !/^\d+$/.test(slot)) return null;
 
   return (
     <div className="my-8 text-center font-sans">
