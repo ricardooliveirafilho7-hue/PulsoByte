@@ -1,24 +1,153 @@
 @import "tailwindcss";
 
+/* ---------------------------------------------------------------------------
+   Tokens do design system editorial.
+   Fonte única de verdade das cores — documentado em
+   docs/editorial-design-system.md. Nenhum componente deve usar hex solto.
+--------------------------------------------------------------------------- */
+
 @theme {
-  --color-background: #f4f3ef;
+  /* Base papel */
+  --color-background: #f6f5f2;
+  --color-paper-deep: #ece9e3;
   --color-surface: #ffffff;
-  --color-ink: #09090b;
-  --color-muted: #60636b;
-  --color-line: #d9d9d4;
-  --color-brand: #5362ff;
-  --color-brand-dark: #3945e0;
-  --color-brand-soft: #ebedff;
-  --color-cyan: #16c7ce;
+  --color-surface-raised: #ffffff;
+  --color-ink: #17181c;
+  --color-ink-soft: #2d2f35;
+  --color-muted: #5d6068;
+  --color-line: #d8d6d0;
+  --color-line-soft: #e7e5e0;
+
+  /* Marca */
+  --color-brand: #4e6e87;
+  --color-brand-dark: #3f5f78;
+  --color-brand-soft: #e6eef4;
+  --color-brand-faint: #f1f5f8;
+
+  /* Cores editoriais auxiliares — versões escuras para texto/bordas,
+     versões claras apenas como fundo. */
+  --color-red: #8f4545;
+  --color-red-soft: #f4e9e7;
+  --color-green: #52614d;
+  --color-green-soft: #edf1ea;
+  --color-amber: #74532e;
+  --color-amber-soft: #f3ece1;
+  --color-violet: #665b7c;
+  --color-violet-soft: #efecf3;
+
+  /* Painel sempre escuro (rodapé, módulo analítico, blocos de código):
+     não inverte com o tema. */
+  --color-panel: #17181c;
+  --color-panel-ink: #f1f1ee;
+  --color-panel-muted: #b7bac2;
+  --color-panel-line: #34373e;
+  --color-panel-accent: #9bb4c8;
+  --color-panel-accent-bright: #b7cbdb;
 
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-source-serif), ui-serif, Georgia, serif;
+}
+
+/* Variáveis que não geram utilitários Tailwind */
+:root {
+  --selection-bg: #3f5f78;
+  --selection-ink: #ffffff;
+  --article-size: 1.155rem; /* ~18.5px */
+  --article-max: 45rem; /* 720px, ~66 caracteres por linha */
+  color-scheme: light;
+}
+
+/* ---------------------------------------------------------------------------
+   Dark mode verdadeiro — sobrescrita de tokens, não inversão.
+   Escolha manual via data-theme (persistida) com prefers-color-scheme
+   como padrão quando não há escolha (ou sem JavaScript).
+--------------------------------------------------------------------------- */
+
+:root[data-theme="dark"] {
+  --color-background: #111216;
+  --color-paper-deep: #0c0d10;
+  --color-surface: #191b20;
+  --color-surface-raised: #22252b;
+  --color-ink: #f1f1ee;
+  --color-ink-soft: #d8d9d5;
+  --color-muted: #b7bac2;
+  --color-line: #34373e;
+  --color-line-soft: #2a2d33;
+  --color-brand: #9bb4c8;
+  --color-brand-dark: #b7cbdb;
+  --color-brand-soft: #232f3a;
+  --color-brand-faint: #1b242c;
+  --color-red: #c79a94;
+  --color-red-soft: #2e2222;
+  --color-green: #a9baa0;
+  --color-green-soft: #232a20;
+  --color-amber: #c9a97e;
+  --color-amber-soft: #2e2718;
+  --color-violet: #b0a6c6;
+  --color-violet-soft: #272433;
+  --color-panel: #191b20;
+  --selection-bg: #9bb4c8;
+  --selection-ink: #111216;
+  color-scheme: dark;
+}
+
+/* Sem JavaScript, respeita a preferência do sistema. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --color-background: #111216;
+    --color-paper-deep: #0c0d10;
+    --color-surface: #191b20;
+    --color-surface-raised: #22252b;
+    --color-ink: #f1f1ee;
+    --color-ink-soft: #d8d9d5;
+    --color-muted: #b7bac2;
+    --color-line: #34373e;
+    --color-line-soft: #2a2d33;
+    --color-brand: #9bb4c8;
+    --color-brand-dark: #b7cbdb;
+    --color-brand-soft: #232f3a;
+    --color-brand-faint: #1b242c;
+    --color-red: #c79a94;
+    --color-red-soft: #2e2222;
+    --color-green: #a9baa0;
+    --color-green-soft: #232a20;
+    --color-amber: #c9a97e;
+    --color-amber-soft: #2e2718;
+    --color-violet: #b0a6c6;
+    --color-violet-soft: #272433;
+    --color-panel: #191b20;
+    --selection-bg: #9bb4c8;
+    --selection-ink: #111216;
+    color-scheme: dark;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Preferências de leitura (persistidas em localStorage, aplicadas no <html>)
+--------------------------------------------------------------------------- */
+
+:root[data-fontsize="small"] {
+  --article-size: 1.0625rem; /* 17px */
+}
+
+:root[data-fontsize="large"] {
+  --article-size: 1.28rem; /* ~20.5px */
+}
+
+:root[data-width="wide"] {
+  --article-max: 52rem; /* 832px */
+}
+
+/* Modo foco: esconde elementos marcados como secundários para leitura. */
+:root[data-focus="on"] [data-focus-hide] {
+  display: none;
 }
 
 html {
   scroll-behavior: smooth;
 }
 
+/* Movimento reduzido: preferência do sistema ou escolha no painel. */
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -30,6 +159,18 @@ html {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+:root[data-motion="reduced"] {
+  scroll-behavior: auto;
+}
+
+:root[data-motion="reduced"] *,
+:root[data-motion="reduced"] *::before,
+:root[data-motion="reduced"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
 }
 
 body {
@@ -45,8 +186,8 @@ body {
 }
 
 ::selection {
-  background-color: var(--color-brand);
-  color: #ffffff;
+  background-color: var(--selection-bg);
+  color: var(--selection-ink);
 }
 
 /* Regra dupla editorial, usada para fechar o cabeçalho e abrir seções fortes */
@@ -60,7 +201,7 @@ body {
 
 .article-body {
   font-family: var(--font-serif);
-  font-size: 1.155rem; /* ~18.5px */
+  font-size: var(--article-size);
   line-height: 1.78;
   color: var(--color-ink);
   overflow-wrap: break-word;
@@ -181,7 +322,7 @@ body {
   border-bottom: 0;
 }
 
-/* Código */
+/* Código — painel sempre escuro, legível nos dois temas */
 .article-body code {
   font-size: 0.875em;
   background-color: var(--color-brand-soft);
@@ -190,8 +331,9 @@ body {
 }
 
 .article-body pre {
-  background-color: var(--color-ink);
-  color: #e8e8ec;
+  background-color: var(--color-panel);
+  color: var(--color-panel-ink);
+  border: 1px solid var(--color-panel-line);
   padding: 1.1rem 1.25rem;
   overflow-x: auto;
   font-size: 0.875rem;

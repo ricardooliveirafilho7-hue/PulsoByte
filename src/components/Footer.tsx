@@ -14,7 +14,7 @@ const institutional = [
 
 export function Footer() {
   return (
-    <footer className="mt-20 bg-ink text-white">
+    <footer className="mt-20 bg-panel text-panel-ink" data-focus-hide>
       <div className="mx-auto max-w-[1280px] px-4 py-14 sm:px-6 lg:px-8">
         <div className="flex flex-col justify-between gap-10 border-b border-white/15 pb-12 lg:flex-row">
           <div className="max-w-md">
@@ -37,7 +37,7 @@ export function Footer() {
                   <li key={category.slug}>
                     <Link
                       href={`/categoria/${category.slug}`}
-                      className="text-white/80 transition-colors duration-200 hover:text-cyan"
+                      className="text-white/80 transition-colors duration-200 hover:text-white"
                     >
                       {category.name}
                     </Link>
@@ -55,7 +55,7 @@ export function Footer() {
                   <li key={item.href}>
                     <Link
                       href={item.href}
-                      className="text-white/80 transition-colors duration-200 hover:text-cyan"
+                      className="text-white/80 transition-colors duration-200 hover:text-white"
                     >
                       {item.label}
                     </Link>

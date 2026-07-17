@@ -12,8 +12,8 @@ export function LogoMark({ className = "h-5 w-auto" }: { className?: string }) {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <rect x="31" y="10.5" width="5" height="5" fill="#5362FF" />
-      <rect x="38" y="4.5" width="4" height="4" fill="#16C7CE" />
+      <rect x="31" y="10.5" width="5" height="5" fill="var(--color-brand)" />
+      <rect x="38" y="4.5" width="4" height="4" fill="var(--color-brand-dark)" />
     </svg>
   );
 }
@@ -24,7 +24,7 @@ function PulseTick({ className }: { className: string }) {
     <svg viewBox="0 0 14 24" className={className} aria-hidden="true" fill="none">
       <path
         d="M1 15h2.5L7 4l4 16 2-8"
-        stroke="#5362FF"
+        stroke="var(--color-brand)"
         strokeWidth="2.5"
         strokeLinecap="round"
         strokeLinejoin="round"

@@ -47,7 +47,7 @@ export function ArticleImage({
 }) {
   const image = (
     <div
-      className={`relative overflow-hidden bg-ink ${variantClasses[variant]} ${className}`}
+      className={`relative overflow-hidden bg-paper-deep ${variantClasses[variant]} ${className}`}
     >
       <Image
         src={article.coverImage}

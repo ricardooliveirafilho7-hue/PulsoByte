@@ -36,13 +36,25 @@ export const metadata: Metadata = {
   },
 };
 
+/**
+ * Aplica tema e preferências de leitura antes da primeira pintura,
+ * evitando flash de tema errado. Os valores vêm do localStorage e são
+ * editados pelo painel de preferências (ReadingPreferences).
+ */
+const prefsScript = `(function(){try{var p=JSON.parse(localStorage.getItem("pb-prefs")||"{}");var d=document.documentElement;var t=p.theme||"system";var dark=t==="dark"||(t==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);d.dataset.theme=dark?"dark":"light";if(p.fontSize&&p.fontSize!=="default")d.dataset.fontsize=p.fontSize;if(p.width&&p.width!=="comfortable")d.dataset.width=p.width;if(p.motion&&p.motion!=="full")d.dataset.motion=p.motion;if(p.focus==="on")d.dataset.focus="on";}catch(e){}})();`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className={`${geistSans.variable} ${sourceSerif.variable}`}>
+    <html
+      lang="pt-BR"
+      className={`${geistSans.variable} ${sourceSerif.variable}`}
+      suppressHydrationWarning
+    >
       <body className="flex min-h-dvh flex-col antialiased">
+        <script dangerouslySetInnerHTML={{ __html: prefsScript }} />
         <a
           href="#conteudo"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-brand focus:px-4 focus:py-3 focus:text-sm focus:font-semibold focus:text-white"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:bg-ink focus:px-4 focus:py-3 focus:text-sm focus:font-semibold focus:text-background"
         >
           Pular para o conteúdo
         </a>

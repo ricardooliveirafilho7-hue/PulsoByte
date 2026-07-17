@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Article } from "@/lib/articles";
 import { getCategory } from "@/config/categories";
+import { getCategoryAccent } from "@/config/design-tokens";
 import { formatDate, formatDateShort } from "@/lib/format";
 import { ArticleImage } from "@/components/ArticleImage";
 
@@ -24,10 +25,11 @@ export function Kicker({
   tone?: "light" | "dark";
 }) {
   const category = getCategory(article.category);
+  const accent = getCategoryAccent(article.category);
   return (
     <p
       className={`flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] ${
-        tone === "dark" ? "text-cyan" : "text-brand"
+        tone === "dark" ? "text-panel-accent" : accent.text
       }`}
     >
       <Link
@@ -146,7 +148,7 @@ export function TextStory({
             }`}
           >
             <Link href={`/artigos/${article.slug}`} className="after:absolute after:inset-0">
-              <span className={`${EASE} ${tone === "dark" ? "group-hover:text-cyan" : TITLE_HOVER}`}>
+              <span className={`${EASE} ${tone === "dark" ? "group-hover:text-panel-accent-bright" : TITLE_HOVER}`}>
                 {article.title}
               </span>
             </Link>

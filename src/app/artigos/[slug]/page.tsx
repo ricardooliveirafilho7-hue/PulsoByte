@@ -3,7 +3,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCategory } from "@/config/categories";
 import { site, absoluteUrl } from "@/config/site";
+import {
+  contentTypeLabels,
+  difficultyLabels,
+  reviewStatusLabels,
+} from "@/config/editorial";
 import { getArticle, getArticles, getRelatedArticles } from "@/lib/articles";
+import { getTrailForArticle } from "@/lib/trails";
+import { SaveArticleButton } from "@/components/interactive/SaveArticleButton";
 import { getTableOfContents } from "@/lib/toc";
 import { formatDate } from "@/lib/format";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -58,14 +65,19 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
   if (!article) notFound();
 
   const category = getCategory(article.category);
+  const trailInfo = getTrailForArticle(article.slug);
   const related = getRelatedArticles(article);
   const toc = getTableOfContents(article.content);
   const wasUpdated = article.updatedAt !== article.publishedAt;
   const articleUrl = absoluteUrl(`/artigos/${article.slug}`);
 
+  // Indicadores úteis na abertura — só aparecem quando dizem algo ao leitor.
+  const reviewLabel = reviewStatusLabels[article.reviewStatus];
+  const difficultyLabel = article.difficulty ? difficultyLabels[article.difficulty] : undefined;
+
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "Article",
+    "@type": article.contentType === "news" ? "NewsArticle" : "Article",
     headline: article.title,
     description: article.description,
     image: absoluteUrl(article.coverImage),
@@ -95,6 +107,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
         />
         <p className="mt-8 text-xs font-bold uppercase tracking-[0.2em] text-brand">
           {category?.name}
+          <span className="text-muted"> · {contentTypeLabels[article.contentType]}</span>
         </p>
         <h1 className="mt-4 font-serif text-4xl font-bold leading-[1.05] tracking-[-0.015em] sm:text-5xl lg:text-[3.75rem]">
           {article.title}
@@ -122,6 +135,29 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           )}
           <span aria-hidden="true" className="text-line">|</span>
           <span>{article.readingTimeMinutes} min de leitura</span>
+          {reviewLabel && (
+            <>
+              <span aria-hidden="true" className="text-line">|</span>
+              <span>{reviewLabel}</span>
+            </>
+          )}
+          {difficultyLabel && (
+            <>
+              <span aria-hidden="true" className="text-line">|</span>
+              <span>Nível: {difficultyLabel}</span>
+            </>
+          )}
+        </div>
+        <div className="mt-6 flex justify-center">
+          <SaveArticleButton
+            article={{
+              slug: article.slug,
+              title: article.title,
+              publishedAt: article.publishedAt,
+              coverImage: article.coverImage,
+              category: article.category,
+            }}
+          />
         </div>
       </header>
 
@@ -137,7 +173,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           </div>
         </div>
 
-        <div className="mx-auto w-full max-w-[720px]">
+        <div className="mx-auto w-full max-w-[var(--article-max)]">
           <div className="mb-8 lg:hidden">
             <MobileToc entries={toc} />
           </div>
@@ -147,10 +183,52 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           <div className="article-body">
             <MdxContent source={article.content} />
           </div>
+          {trailInfo?.next && (
+            <nav
+              aria-label="Trilha de leitura"
+              data-focus-hide
+              className="mt-10 border-t-2 border-brand pt-3 lg:hidden"
+            >
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-dark">
+                Trilha · {trailInfo.trail.title}
+              </p>
+              <p className="mt-3 text-sm leading-snug">
+                <span className="text-muted">Próximo passo: </span>
+                <Link
+                  href={`/artigos/${trailInfo.next.slug}`}
+                  className="font-semibold transition-colors duration-200 hover:text-brand-dark"
+                >
+                  {trailInfo.next.title}
+                </Link>
+              </p>
+            </nav>
+          )}
         </div>
 
         <aside className="hidden lg:block" aria-label="Complementos do artigo">
           <div className="sticky top-10 space-y-10">
+            {trailInfo && (
+              <nav aria-label="Trilha de leitura" data-focus-hide>
+                <p className="border-t-2 border-brand pt-3 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-dark">
+                  Trilha · {trailInfo.trail.title}
+                </p>
+                {trailInfo.next ? (
+                  <p className="mt-3 text-sm leading-snug">
+                    <span className="text-muted">Próximo passo: </span>
+                    <Link
+                      href={`/artigos/${trailInfo.next.slug}`}
+                      className="font-semibold transition-colors duration-200 hover:text-brand-dark"
+                    >
+                      {trailInfo.next.title}
+                    </Link>
+                  </p>
+                ) : (
+                  <p className="mt-3 text-sm leading-snug text-muted">
+                    Você chegou ao fim desta trilha.
+                  </p>
+                )}
+              </nav>
+            )}
             {toc.length >= 2 && (
               <nav aria-label="Índice do artigo">
                 <p className="border-t-2 border-ink pt-3 text-[11px] font-bold uppercase tracking-[0.18em]">
@@ -162,7 +240,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
               </nav>
             )}
             {related.length > 0 && (
-              <nav aria-label="Artigos relacionados">
+              <nav aria-label="Artigos relacionados" data-focus-hide>
                 <p className="border-t-2 border-ink pt-3 text-[11px] font-bold uppercase tracking-[0.18em]">
                   Relacionados
                 </p>
@@ -188,7 +266,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
 
       {/* Relacionados no fim da página para telas menores */}
       {related.length > 0 && (
-        <section aria-labelledby="relacionados" className="mt-16 lg:hidden">
+        <section aria-labelledby="relacionados" className="mt-16 lg:hidden" data-focus-hide>
           <div className="border-t-2 border-ink pt-3">
             <h2 id="relacionados" className="text-sm font-bold uppercase tracking-[0.18em]">
               Leia também

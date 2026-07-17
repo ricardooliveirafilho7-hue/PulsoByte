@@ -52,7 +52,7 @@ export function MobileMenu() {
           aria-hidden="true"
           tabIndex={-1}
           onClick={() => setOpen(false)}
-          className="fixed inset-0 z-40 bg-ink/50"
+          className="fixed inset-0 z-40 bg-black/50"
         />
       )}
 
@@ -91,6 +91,7 @@ export function MobileMenu() {
           <ul className="flex flex-col gap-1 text-xs font-bold uppercase tracking-[0.14em]">
             {[
               { href: "/artigos", label: "Todos os artigos" },
+              { href: "/salvos", label: "Artigos salvos" },
               { href: "/buscar", label: "Buscar" },
               { href: "/sobre", label: "Sobre" },
               { href: "/contato", label: "Contato" },

@@ -17,7 +17,7 @@ export default function ErrorPage({ reset }: { error: Error; reset: () => void }
         <button
           type="button"
           onClick={reset}
-          className="inline-flex h-11 items-center bg-ink px-6 text-xs font-bold uppercase tracking-[0.14em] text-white transition-colors duration-200 hover:bg-brand"
+          className="inline-flex h-11 items-center bg-ink px-6 text-xs font-bold uppercase tracking-[0.14em] text-background transition-colors duration-200 hover:bg-brand"
         >
           Tentar novamente
         </button>
