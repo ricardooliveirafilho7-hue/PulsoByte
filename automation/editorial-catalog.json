@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "generatedBy": "scripts/generate-editorial-catalog.mjs",
   "note": "Arquivo gerado automaticamente. NÃO edite manualmente: rode npm run catalog:generate.",
-  "articleCount": 14,
+  "articleCount": 15,
   "articles": [
     {
       "slug": "assistentes-de-ia-no-trabalho",
@@ -74,6 +74,37 @@
       "coverImage": "/images/articles/como-organizar-notificacoes-do-celular.webp",
       "coverSha256": "65a1ed78b53957b081f009852b2865441501eb2cba42bb542c562176db349018",
       "coverPerceptualHash": "0001100000011100000111100001111000011110000111110000001000000000",
+      "internalImages": []
+    },
+    {
+      "slug": "como-liberar-espaco-no-celular-sem-apagar-o-que-importa",
+      "file": "content/articles/como-liberar-espaco-no-celular-sem-apagar-o-que-importa.mdx",
+      "status": "published",
+      "title": "Como liberar espaço no celular sem apagar o que importa",
+      "normalizedTitle": "como liberar espaco no celular sem apagar o que importa",
+      "publishedAt": "2026-07-17",
+      "updatedAt": "2026-07-17",
+      "category": "guias",
+      "contentType": "guide",
+      "publicationSlot": "morning",
+      "automationRunId": "2026-07-17-morning",
+      "topicKey": "liberar-espaco-celular-sem-perder-arquivos",
+      "primaryEntity": "Armazenamento do celular",
+      "normalizedPrimaryEntity": "armazenamento do celular",
+      "searchIntent": "practical",
+      "primarySourceUrl": "https://support.google.com/android/answer/7431795?hl=pt-BR",
+      "sourceUrls": [
+        "https://support.apple.com/pt-br/108429",
+        "https://support.google.com/android/answer/7431795?hl=pt-BR",
+        "https://support.google.com/googleone/answer/6374270?hl=pt-br"
+      ],
+      "sourceDomains": [
+        "apple.com",
+        "google.com"
+      ],
+      "coverImage": "/images/articles/como-liberar-espaco-no-celular-sem-apagar-o-que-importa.webp",
+      "coverSha256": "628c2fcea5cb47af07c43f5b44b501048e18748cc7400c02c0e4b10ab8912610",
+      "coverPerceptualHash": "1100001111000011110000111100001111000011100000111000001111000011",
       "internalImages": []
     },
     {
