@@ -1,0 +1,137 @@
+name: Automated content quality and merge
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: automated-content-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+  checks: read
+  statuses: read
+
+jobs:
+  quality:
+    name: Quality checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout pull request
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate article images
+        run: npm run validate:images
+
+      - name: Check TypeScript
+        run: npm run typecheck
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Build production site
+        run: npm run build
+
+  auto-merge-automated-article:
+    name: Auto-merge automated article
+    needs: quality
+    if: >-
+      ${{
+        needs.quality.result == 'success' &&
+        github.event.pull_request.draft == false &&
+        github.event.pull_request.head.repo.full_name == github.repository &&
+        startsWith(github.event.pull_request.head.ref, 'automation/artigo-')
+      }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    permissions:
+      contents: write
+      pull-requests: write
+      checks: read
+      statuses: read
+
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR_URL: ${{ github.event.pull_request.html_url }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
+
+    steps:
+      - name: Confirm target is the default branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          default_branch="$(gh api "repos/${GITHUB_REPOSITORY}" --jq '.default_branch')"
+
+          if [[ "${BASE_BRANCH}" != "${default_branch}" ]]; then
+            echo "Refusing auto-merge: PR targets '${BASE_BRANCH}', but default branch is '${default_branch}'."
+            exit 1
+          fi
+
+      - name: Wait for Vercel preview
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for attempt in $(seq 1 60); do
+            commit_state="$(
+              gh api "repos/${GITHUB_REPOSITORY}/commits/${HEAD_SHA}/status" \
+                --jq '[.statuses[] | select(.context | test("Vercel"; "i"))][0].state // "missing"' \
+                2>/dev/null || echo missing
+            )"
+
+            check_state="$(
+              gh api -H 'Accept: application/vnd.github+json' \
+                "repos/${GITHUB_REPOSITORY}/commits/${HEAD_SHA}/check-runs" \
+                --jq '[.check_runs[] | select(.name | test("Vercel"; "i"))][0] | if . == null then "missing" elif .status != "completed" then .status else (.conclusion // "missing") end' \
+                2>/dev/null || echo missing
+            )"
+
+            echo "Attempt ${attempt}/60 — Vercel status=${commit_state}; check=${check_state}"
+
+            if [[ "${commit_state}" == "success" || "${check_state}" == "success" ]]; then
+              echo "Vercel preview passed."
+              exit 0
+            fi
+
+            case "${commit_state}" in
+              failure|error)
+                echo "Vercel preview failed with status '${commit_state}'."
+                exit 1
+                ;;
+            esac
+
+            case "${check_state}" in
+              failure|cancelled|timed_out|action_required|startup_failure|stale)
+                echo "Vercel preview failed with check conclusion '${check_state}'."
+                exit 1
+                ;;
+            esac
+
+            sleep 10
+          done
+
+          echo "Timed out waiting for the Vercel preview."
+          exit 1
+
+      - name: Squash and merge pull request
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh pr merge "${PR_URL}" --squash --delete-branch
