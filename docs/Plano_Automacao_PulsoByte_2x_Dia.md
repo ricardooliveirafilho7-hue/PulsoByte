@@ -171,6 +171,7 @@ Antes de qualquer build, o workflow deve validar o diff. Um PR editorial normal 
 - exatamente um novo `content/articles/*.mdx`;
 - exatamente uma nova capa `public/images/articles/*.webp`;
 - até três imagens internas, quando justificadas;
+- a atualização gerada do manifesto `automation/editorial-catalog.json` (única exceção de modificação, sempre produzida por `npm run catalog:generate` e conferida pelo CI com `validate:catalog`);
 - nenhum arquivo apagado;
 - nenhuma alteração em `.github/`, `src/`, `package.json`, lockfile, configuração da Vercel, AdSense ou arquivos de segurança.
 

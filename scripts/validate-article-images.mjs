@@ -1,12 +1,31 @@
 import fs from "node:fs";
 import path from "node:path";
-import crypto from "node:crypto";
 import matter from "gray-matter";
 import sharp from "sharp";
+import { loadEditorialConfig } from "./lib/editorial.mjs";
+import { sha256File, perceptualHash, hammingDistance } from "./lib/images.mjs";
+
+/**
+ * Validação editorial de imagens.
+ *
+ * Limites (peso, dimensões, proporção, distâncias perceptuais) vêm de
+ * automation/editorial-config.json.
+ *
+ * Política de semelhança perceptual entre capas (aHash 8x8, 64 bits):
+ * - distância ≤ perceptualDistanceBlock (${block}): em PR editorial
+ *   automático (branch automation/artigo-*) é ERRO; fora dele, aviso;
+ * - distância ≤ perceptualDistanceWarn: sempre aviso.
+ * O acervo atual tem distância mínima 14/64 entre capas — os limites foram
+ * escolhidos para nunca bloquear capas legítimas já publicadas.
+ */
 
 const root = process.cwd();
+const config = loadEditorialConfig(root);
 const articlesDir = path.join(root, "content", "articles");
 const publicDir = path.join(root, "public");
+const branch = process.env.GITHUB_HEAD_REF || process.env.BRANCH_NAME || "";
+const strictPerceptual = branch.startsWith("automation/artigo-");
+
 const validTypes = new Set([
   "photo",
   "official",
@@ -75,12 +94,11 @@ async function validateImageAsset(slug, field, imageUrl, { cover = false } = {})
     report(slug, field, "a extensão não é .webp.", "converta a imagem para WebP.");
   }
   const size = fs.statSync(imagePath).size;
-  if (size > 500 * 1024) {
-    report(slug, field, `arquivo tem ${(size / 1024).toFixed(1)} KB.`, "comprima para no máximo 500 KB.");
+  if (size > config.images.maxBytes) {
+    report(slug, field, `arquivo tem ${(size / 1024).toFixed(1)} KB.`, `comprima para no máximo ${Math.round(config.images.maxBytes / 1024)} KB.`);
   }
 
-  const bytes = fs.readFileSync(imagePath);
-  const digest = crypto.createHash("sha256").update(bytes).digest("hex");
+  const digest = sha256File(imagePath);
   const previousHash = usedHashes.get(digest);
   if (previousHash && previousHash.imageUrl !== imageUrl) {
     report(slug, field, `bytes idênticos à imagem ${previousHash.imageUrl} de "${previousHash.slug}".`, "use um arquivo editorial exclusivo ou reutilize exatamente o mesmo caminho quando isso for intencional.");
@@ -96,11 +114,18 @@ async function validateImageAsset(slug, field, imageUrl, { cover = false } = {})
     if (!metadata.width || !metadata.height) {
       report(slug, field, "dimensões não puderam ser identificadas.", "gere novamente a imagem em WebP válido.");
     }
-    if (cover && (!metadata.width || !metadata.height || metadata.width < 1200 || metadata.height < 675)) {
-      report(slug, field, `dimensão ${metadata.width ?? "?"}x${metadata.height ?? "?"} abaixo do mínimo 1200x675.`, "substitua por uma imagem com pelo menos 1200x675 px.");
+    if (
+      cover &&
+      (!metadata.width || !metadata.height ||
+        metadata.width < config.images.minWidth || metadata.height < config.images.minHeight)
+    ) {
+      report(slug, field, `dimensão ${metadata.width ?? "?"}x${metadata.height ?? "?"} abaixo do mínimo ${config.images.minWidth}x${config.images.minHeight}.`, `substitua por uma imagem com pelo menos ${config.images.minWidth}x${config.images.minHeight} px.`);
     }
-    if (cover && metadata.width && metadata.height && metadata.width * 9 !== metadata.height * 16) {
-      report(slug, field, `proporção ${metadata.width}x${metadata.height} não é 16:9.`, "recorte para 1600x900 ou outra dimensão 16:9 acima do mínimo.");
+    if (
+      cover && metadata.width && metadata.height &&
+      metadata.width * config.images.aspectHeight !== metadata.height * config.images.aspectWidth
+    ) {
+      report(slug, field, `proporção ${metadata.width}x${metadata.height} não é ${config.images.aspectWidth}:${config.images.aspectHeight}.`, "recorte para 1600x900 ou outra dimensão 16:9 acima do mínimo.");
     }
     if ((metadata.pages ?? 1) > 1) {
       report(slug, field, "imagem animada não é permitida.", "gere um WebP estático.");
@@ -110,21 +135,22 @@ async function validateImageAsset(slug, field, imageUrl, { cover = false } = {})
     }
 
     if (cover) {
-      const { data: pixels } = await sharp(imagePath)
-        .rotate()
-        .resize(8, 8, { fit: "fill" })
-        .grayscale()
-        .raw()
-        .toBuffer({ resolveWithObject: true });
-      const average = pixels.reduce((sum, value) => sum + value, 0) / pixels.length;
-      const perceptual = [...pixels].map((value) => (value >= average ? "1" : "0")).join("");
+      const perceptual = await perceptualHash(imagePath, sharp);
       for (const previous of perceptualHashes) {
-        const distance = [...perceptual].reduce(
-          (total, bit, index) => total + (bit === previous.hash[index] ? 0 : 1),
-          0
-        );
-        if (distance <= 5) {
-          warnings.push(`Possível semelhança visual entre "${slug}" e "${previous.slug}" (distância ${distance}/64).`);
+        const distance = hammingDistance(perceptual, previous.hash);
+        if (distance <= config.images.perceptualDistanceBlock) {
+          if (strictPerceptual) {
+            report(
+              slug,
+              field,
+              `capa perceptualmente duplicada de "${previous.slug}" (distância ${distance}/${config.images.perceptualHashBits} ≤ ${config.images.perceptualDistanceBlock}).`,
+              "escolha uma imagem visualmente distinta das capas já publicadas."
+            );
+          } else {
+            warnings.push(`Semelhança perceptual forte entre "${slug}" e "${previous.slug}" (distância ${distance}/${config.images.perceptualHashBits}).`);
+          }
+        } else if (distance <= config.images.perceptualDistanceWarn) {
+          warnings.push(`Possível semelhança visual entre "${slug}" e "${previous.slug}" (distância ${distance}/${config.images.perceptualHashBits}).`);
         }
       }
       perceptualHashes.push({ slug, hash: perceptual });
@@ -145,7 +171,7 @@ function collectInternalImages(content) {
   return images;
 }
 
-for (const fileName of fs.readdirSync(articlesDir).filter((name) => name.endsWith(".mdx"))) {
+for (const fileName of fs.readdirSync(articlesDir).filter((name) => name.endsWith(".mdx")).sort()) {
   const raw = fs.readFileSync(path.join(articlesDir, fileName), "utf8");
   const { data, content } = matter(raw);
   const slug = typeof data.slug === "string" ? data.slug : fileName.replace(/\.mdx$/, "");

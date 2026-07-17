@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "$comment": "Fonte única de valores compartilhados da automação editorial PulsoByte. A política é explicada em docs/automation-editorial.md e docs/Plano_Automacao_PulsoByte_2x_Dia.md; este arquivo fornece apenas os valores. Lido por src/config/site.ts, scripts/ e .github/workflows/.",
+  "site": {
+    "productionUrl": "https://pulso-byte.vercel.app",
+    "plannedCustomDomain": "https://www.pulsobyte.com.br",
+    "articlePathPrefix": "/artigos"
+  },
+  "timezone": "America/Sao_Paulo",
+  "slots": {
+    "morning": { "time": "06:00", "branchToken": "manha" },
+    "evening": { "time": "20:30", "branchToken": "noite" }
+  },
+  "limits": {
+    "articlesPerRun": 1,
+    "articlesPerDate": 2,
+    "maxInternalImages": 3,
+    "maxCorrectionCycles": 3,
+    "maxGuardianAttempts": 2,
+    "maxBaseRevalidations": 2
+  },
+  "identity": {
+    "automationRunIdPattern": "^(\\d{4})-(\\d{2})-(\\d{2})-(morning|evening)$",
+    "branchPattern": "^automation/artigo-(\\d{4})-(\\d{2})-(\\d{2})-(manha|noite)-([a-z0-9]+(?:-[a-z0-9]+)*)$",
+    "automationFields": [
+      "publicationSlot",
+      "automationRunId",
+      "topicKey",
+      "primaryEntity",
+      "searchIntent"
+    ],
+    "requiredAuthor": "Redação PulsoByte"
+  },
+  "editorial": {
+    "contentTypes": [
+      "news",
+      "explainer",
+      "guide",
+      "comparison",
+      "analysis",
+      "review",
+      "visual-story",
+      "opinion"
+    ],
+    "searchIntents": ["informational", "practical", "comparison", "news", "safety"],
+    "minimumWords": {
+      "news": 800,
+      "guide": 1100,
+      "explainer": 1000,
+      "comparison": 1300,
+      "analysis": 1300,
+      "review": 1000,
+      "visual-story": 900,
+      "opinion": 1000
+    },
+    "defaultMinimumWords": 1000
+  },
+  "sources": {
+    "minHttpsUrls": 2,
+    "minRegistrableDomains": 2
+  },
+  "images": {
+    "maxBytes": 512000,
+    "minWidth": 1200,
+    "minHeight": 675,
+    "aspectWidth": 16,
+    "aspectHeight": 9,
+    "perceptualHashBits": 64,
+    "perceptualDistanceBlock": 10,
+    "perceptualDistanceWarn": 13
+  },
+  "similarity": {
+    "shingleSize": 3,
+    "blockThreshold": 0.6,
+    "warnThreshold": 0.35
+  },
+  "mdxComponents": [
+    "AdSlot",
+    "BestFor",
+    "Callout",
+    "ComparisonTable",
+    "ContextBox",
+    "CorrectionNote",
+    "Definition",
+    "FAQ",
+    "Figure",
+    "FinalVerdict",
+    "GuideChecklist",
+    "KeyTakeaways",
+    "ProsAndCons",
+    "QuickSummary",
+    "QuickVerdict",
+    "Quote",
+    "Requirements",
+    "SourceList",
+    "Sources",
+    "StepByStep",
+    "Timeline",
+    "Troubleshooting",
+    "UpdateHistory",
+    "WhatChanged",
+    "WhyItMatters"
+  ],
+  "catalog": {
+    "path": "automation/editorial-catalog.json",
+    "schemaVersion": 1
+  }
+}

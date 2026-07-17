@@ -1,0 +1,162 @@
+name: Automation dry-run
+
+# Teste de integração manual do caminho editorial SEM merge e SEM publicação.
+# Aponte para um PR sintético/fixture e o workflow prova: detecção do PR
+# editorial, allowlist, identidade da execução, catálogo, merge sintético,
+# validações completas, descoberta do Preview da Vercel e a decisão de
+# revalidação de base — e termina SEMPRE com o merge bloqueado (o job não
+# tem permissão de escrita, por construção).
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "Número do PR a inspecionar em modo dry-run"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  dry-run:
+    name: Dry-run editorial pipeline
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: read
+      checks: read
+      statuses: read
+
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR_NUMBER: ${{ inputs.pr_number }}
+
+    steps:
+      - name: Resolve pull request metadata
+        id: pr
+        shell: bash
+        run: |
+          set -euo pipefail
+          pr_json="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}")"
+          {
+            echo "base_sha=$(jq -r '.base.sha' <<<"${pr_json}")"
+            echo "base_ref=$(jq -r '.base.ref' <<<"${pr_json}")"
+            echo "head_sha=$(jq -r '.head.sha' <<<"${pr_json}")"
+            echo "head_ref=$(jq -r '.head.ref' <<<"${pr_json}")"
+            echo "draft=$(jq -r '.draft' <<<"${pr_json}")"
+            echo "internal=$(jq -r '.head.repo.full_name == .base.repo.full_name' <<<"${pr_json}")"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Detect editorial pull request
+        shell: bash
+        env:
+          HEAD_REF: ${{ steps.pr.outputs.head_ref }}
+          DRAFT: ${{ steps.pr.outputs.draft }}
+          INTERNAL: ${{ steps.pr.outputs.internal }}
+        run: |
+          set -euo pipefail
+          if [[ "${HEAD_REF}" == automation/artigo-* ]]; then
+            echo "DETECÇÃO: PR editorial automático (${HEAD_REF}); draft=${DRAFT}; interno=${INTERNAL}."
+          else
+            echo "DETECÇÃO: PR NÃO editorial (${HEAD_REF}) — as guardas editoriais serão puladas, o restante da esteira roda normalmente."
+          fi
+
+      - name: Checkout synthetic pull request merge
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: refs/pull/${{ inputs.pr_number }}/merge
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Editorial guards (scope, identity, concurrency)
+        if: startsWith(steps.pr.outputs.head_ref, 'automation/artigo-')
+        env:
+          BASE_SHA: ${{ steps.pr.outputs.base_sha }}
+          HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
+          HEAD_BRANCH: ${{ steps.pr.outputs.head_ref }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "${BASE_SHA}" "${HEAD_SHA}"
+          node scripts/automation/check-editorial-pr.mjs --scope --identity --concurrency
+
+      - name: Scan diff for secrets
+        env:
+          BASE_SHA: ${{ steps.pr.outputs.base_sha }}
+          HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "${BASE_SHA}" "${HEAD_SHA}"
+          node scripts/automation/check-secrets.mjs
+
+      - name: Run automated tests
+        run: npm test
+
+      - name: Validate editorial catalog
+        run: npm run validate:catalog
+
+      - name: Validate article content
+        env:
+          GITHUB_HEAD_REF: ${{ steps.pr.outputs.head_ref }}
+        run: npm run validate:content
+
+      - name: Validate article images
+        env:
+          GITHUB_HEAD_REF: ${{ steps.pr.outputs.head_ref }}
+        run: npm run validate:images
+
+      - name: Check TypeScript
+        run: npm run typecheck
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Build production site
+        run: npm run build
+
+      - name: Discover Vercel preview state (informative)
+        shell: bash
+        env:
+          HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
+        run: |
+          set -euo pipefail
+          source .github/scripts/vercel-state.sh
+          state="$(vercel_state "${HEAD_SHA}")"
+          echo "Vercel preview para ${HEAD_SHA}: ${state} (informativo no dry-run; no fluxo real, pending aguarda e failure bloqueia)."
+
+      - name: Demonstrate base revalidation decision
+        shell: bash
+        env:
+          BASE_SHA: ${{ steps.pr.outputs.base_sha }}
+          BASE_REF: ${{ steps.pr.outputs.base_ref }}
+        run: |
+          set -euo pipefail
+          current_base="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/${BASE_REF}" --jq '.object.sha')"
+          CURRENT_BASE="${current_base}" node -e "
+            (async () => {
+              const { planBaseRevalidation } = await import('./scripts/lib/editorial.mjs');
+              const fs = require('node:fs');
+              const config = JSON.parse(fs.readFileSync('automation/editorial-config.json', 'utf8'));
+              const plan = planBaseRevalidation({
+                validatedBase: process.env.BASE_SHA,
+                currentBase: process.env.CURRENT_BASE,
+                attempts: 0,
+                maxAttempts: config.limits.maxBaseRevalidations,
+              });
+              console.log('Decisão de revalidação:', JSON.stringify(plan));
+            })().catch((error) => { console.error(error); process.exit(1); });
+          "
+
+      - name: Merge blocked (dry-run)
+        run: |
+          echo "DRY-RUN CONCLUÍDO: merge intencionalmente BLOQUEADO."
+          echo "Este workflow não possui permissão de escrita (permissions: contents: read) — é impossível integrar o PR a partir daqui."
