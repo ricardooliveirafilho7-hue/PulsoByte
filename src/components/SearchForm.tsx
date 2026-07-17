@@ -22,7 +22,7 @@ export function SearchForm({
       />
       <button
         type="submit"
-        className="h-11 shrink-0 bg-ink px-5 text-xs font-bold uppercase tracking-[0.14em] text-white transition-colors duration-200 hover:bg-brand"
+        className="h-11 shrink-0 bg-ink px-5 text-xs font-bold uppercase tracking-[0.14em] text-background transition-colors duration-200 hover:bg-brand"
       >
         Buscar
       </button>

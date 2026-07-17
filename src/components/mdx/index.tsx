@@ -9,8 +9,8 @@ import { site } from "@/config/site";
 
 const calloutStyles = {
   info: { rule: "border-brand", label: "Nota" },
-  warning: { rule: "border-amber-500", label: "Atenção" },
-  tip: { rule: "border-cyan", label: "Dica" },
+  warning: { rule: "border-amber", label: "Atenção" },
+  tip: { rule: "border-green", label: "Dica" },
 } as const;
 
 /** Aviso destacado no meio do texto. Tipos: info (padrão), warning, tip. */

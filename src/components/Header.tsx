@@ -3,6 +3,7 @@ import { site } from "@/config/site";
 import { Wordmark } from "@/components/Logo";
 import { MobileMenu } from "@/components/MobileMenu";
 import { DesktopNav } from "@/components/DesktopNav";
+import { ReadingPreferences } from "@/components/preferences/ReadingPreferences";
 
 function SearchLink({ className = "" }: { className?: string }) {
   return (
@@ -23,12 +24,18 @@ export function Header() {
   return (
     <header className="bg-surface">
       {/* Fio superior com o slogan */}
-      <div className="hidden border-b border-line sm:block">
+      <div className="hidden border-b border-line sm:block" data-focus-hide>
         <div className="mx-auto flex h-9 max-w-[1280px] items-center justify-between px-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted sm:px-6 lg:px-8">
           <span>{site.slogan.replace(/\.$/, "")}</span>
           <div className="hidden items-center gap-6 sm:flex">
             <Link href="/sobre" className="transition-colors duration-200 hover:text-ink">
               Sobre
+            </Link>
+            <Link
+              href="/politica-editorial"
+              className="transition-colors duration-200 hover:text-ink"
+            >
+              Política Editorial
             </Link>
             <Link href="/contato" className="transition-colors duration-200 hover:text-ink">
               Contato
@@ -38,9 +45,10 @@ export function Header() {
       </div>
 
       {/* Masthead */}
-      <div className="mx-auto grid max-w-[1280px] grid-cols-[2.75rem_1fr_2.75rem] items-center px-4 py-2.5 sm:px-6 sm:py-4 lg:grid-cols-3 lg:px-8 lg:py-7">
-        <MobileMenu />
-        <div className="hidden lg:block" aria-hidden="true" />
+      <div className="mx-auto grid max-w-[1280px] grid-cols-[5.5rem_1fr_5.5rem] items-center px-4 py-2.5 sm:px-6 sm:py-4 lg:px-8 lg:py-7">
+        <div className="flex items-center justify-self-start">
+          <MobileMenu />
+        </div>
         <Link
           href="/"
           aria-label="PulsoByte — página inicial"
@@ -48,11 +56,16 @@ export function Header() {
         >
           <Wordmark size="masthead" />
         </Link>
-        <SearchLink className="justify-self-end" />
+        <div className="flex items-center justify-self-end">
+          <ReadingPreferences />
+          <SearchLink />
+        </div>
       </div>
 
       {/* Navegação de editorias */}
-      <DesktopNav />
+      <div data-focus-hide>
+        <DesktopNav />
+      </div>
 
       <div className="rule-double" />
     </header>

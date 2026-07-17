@@ -16,7 +16,7 @@ export default function NotFound() {
       <div className="mt-10 flex flex-wrap justify-center gap-3">
         <Link
           href="/"
-          className="inline-flex h-11 items-center bg-ink px-6 text-xs font-bold uppercase tracking-[0.14em] text-white transition-colors duration-200 hover:bg-brand"
+          className="inline-flex h-11 items-center bg-ink px-6 text-xs font-bold uppercase tracking-[0.14em] text-background transition-colors duration-200 hover:bg-brand"
         >
           Ir para o início
         </Link>

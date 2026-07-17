@@ -52,7 +52,7 @@ export function MobileMenu() {
           aria-hidden="true"
           tabIndex={-1}
           onClick={() => setOpen(false)}
-          className="fixed inset-0 z-40 bg-ink/50"
+          className="fixed inset-0 z-40 bg-black/50"
         />
       )}
 

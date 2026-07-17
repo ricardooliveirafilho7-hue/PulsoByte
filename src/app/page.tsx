@@ -51,7 +51,7 @@ function Radar({ articles }: { articles: Article[] }) {
     <div className="border-b border-line bg-surface">
       <div className="mx-auto flex max-w-[1280px] items-center gap-4 overflow-x-auto px-4 py-2.5 sm:px-6 lg:px-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <span className="flex shrink-0 items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-brand">
-          <span className="h-1.5 w-1.5 bg-cyan" aria-hidden="true" />
+          <span className="h-1.5 w-1.5 bg-brand" aria-hidden="true" />
           Radar
         </span>
         {articles.map((article, index) => (
@@ -263,15 +263,15 @@ export default function HomePage() {
 
       {/* Negócios Digitais: módulo analítico em fundo escuro */}
       {negocios.length > 0 && (
-        <section aria-labelledby="secao-negocios" className="mt-16 bg-ink py-14 text-white lg:mt-20">
+        <section aria-labelledby="secao-negocios" className="mt-16 bg-panel py-14 text-panel-ink lg:mt-20">
           <div className="mx-auto max-w-[1280px] px-4 sm:px-6 lg:px-8">
-            <div className="mb-10 flex items-baseline justify-between gap-4 border-t-2 border-cyan pt-3">
+            <div className="mb-10 flex items-baseline justify-between gap-4 border-t-2 border-panel-accent pt-3">
               <h2 id="secao-negocios" className="text-sm font-bold uppercase tracking-[0.18em]">
                 Negócios Digitais <span className="text-white/40">— o relatório</span>
               </h2>
               <Link
                 href="/categoria/negocios-digitais"
-                className="shrink-0 text-[11px] font-bold uppercase tracking-[0.14em] text-white/50 transition-colors duration-200 hover:text-cyan"
+                className="shrink-0 text-[11px] font-bold uppercase tracking-[0.14em] text-white/50 transition-colors duration-200 hover:text-white"
               >
                 Ver editoria →
               </Link>
