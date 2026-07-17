@@ -1,0 +1,87 @@
+name: Workflow and script lint
+
+on:
+  pull_request:
+    paths:
+      - ".github/**"
+      - "scripts/**"
+
+permissions:
+  contents: read
+
+jobs:
+  actionlint:
+    name: actionlint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Download and verify actionlint
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Versão fixada; o checksum é verificado contra o arquivo de
+          # checksums publicado no MESMO release (protege contra download
+          # corrompido; a versão é imutável por tag do release).
+          version="1.7.7"
+          base="https://github.com/rhysd/actionlint/releases/download/v${version}"
+          tarball="actionlint_${version}_linux_amd64.tar.gz"
+          curl -fsSL --retry 3 -o "${tarball}" "${base}/${tarball}"
+          curl -fsSL --retry 3 -o checksums.txt "${base}/actionlint_${version}_checksums.txt"
+          grep " ${tarball}\$" checksums.txt | sha256sum -c -
+          tar -xzf "${tarball}" actionlint
+
+      - name: Run actionlint
+        run: ./actionlint -color
+
+  shellcheck:
+    name: shellcheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Run shellcheck on repository shell scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t scripts < <(find .github/scripts -name '*.sh' -type f)
+          if (( ${#scripts[@]} == 0 )); then
+            echo "Nenhum script shell encontrado."
+            exit 0
+          fi
+          shellcheck --severity=warning "${scripts[@]}"
+
+  node-scripts:
+    name: node --check dos scripts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Syntax-check every executable script
+        shell: bash
+        run: |
+          set -euo pipefail
+          status=0
+          while IFS= read -r file; do
+            if ! node --check "${file}"; then
+              status=1
+            fi
+          done < <(find scripts tests -name '*.mjs' -type f)
+          exit "${status}"

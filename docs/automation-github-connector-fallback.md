@@ -29,16 +29,16 @@ Ao entrar em `CONNECTOR_FALLBACK`:
    - `README.md`;
    - `package.json` e lockfile;
    - `.nvmrc`;
+   - `automation/editorial-config.json` (fonte única de valores);
+   - **`automation/editorial-catalog.json` (manifesto editorial)** — este arquivo único, gerado e determinístico, contém o inventário completo do acervo: slugs, títulos normalizados, datas, turnos, `automationRunId`, `topicKey`, entidades, intenções, fontes, hashes SHA-256 e perceptuais das capas e imagens internas. **O fallback não precisa listar a árvore do repositório**;
    - `docs/Plano_Automacao_PulsoByte_2x_Dia.md`;
    - este documento;
-   - schemas e configurações editoriais;
-   - componentes MDX registrados;
+   - componentes MDX registrados (`src/components/mdx/MdxContent.tsx`);
    - scripts de validação;
    - `.github/workflows/automated-content.yml`;
-   - todos os arquivos em `content/articles/`;
-   - metadados e nomes das imagens editoriais existentes.
+   - o texto integral apenas dos artigos de que a pauta depender (links internos, comparação fina), identificados pelo catálogo.
 
-Se não for possível enumerar e ler integralmente o acervo necessário, encerre `BLOCKED_INFRASTRUCTURE`. Não trabalhe com inventário parcial.
+O inventário para as travas de duplicidade e diversidade vem do catálogo. Se o catálogo não puder ser lido na `sourceRevision`, ou se `npm run validate:catalog` estiver falhando na branch padrão, encerre `BLOCKED_INFRASTRUCTURE`. Não trabalhe com inventário parcial nem reconstruído manualmente.
 
 ## 3. Idempotência no modo conector
 
@@ -81,7 +81,7 @@ Arquivos de texto devem ser enviados pela API de conteúdos. Arquivos binários 
 ## 5. Branch, commit e PR
 
 1. crie `automation/artigo-AAAA-MM-DD-manha-slug` ou `automation/artigo-AAAA-MM-DD-noite-slug` a partir de `sourceRevision`;
-2. grave apenas os arquivos permitidos;
+2. grave apenas os arquivos permitidos (um `.mdx`, uma capa, até três imagens internas usadas e o manifesto `automation/editorial-catalog.json` regenerado — no modo conector, o registro novo do catálogo deve ser construído com os mesmos campos e a mesma serialização do gerador oficial; o CI confere com `validate:catalog` e rejeita qualquer divergência);
 3. confira pela API o diff final e a allowlist;
 4. abra PR não-draft contra a branch padrão descoberta;
 5. não faça merge manual e não habilite auto-merge no PR;

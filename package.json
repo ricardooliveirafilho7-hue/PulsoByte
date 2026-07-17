@@ -8,12 +8,16 @@
   "description": "PulsoByte — Tecnologia sem ruído. Portal editorial de tecnologia.",
   "scripts": {
     "dev": "next dev",
-    "build": "npm run validate:content && npm run validate:images && next build",
+    "build": "npm run validate:catalog && npm run validate:content && npm run validate:images && next build",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "test": "node --test tests/",
+    "catalog:generate": "node scripts/generate-editorial-catalog.mjs",
+    "validate:catalog": "node scripts/generate-editorial-catalog.mjs --check",
     "validate:content": "node scripts/validate-article-content.mjs",
-    "validate:images": "node scripts/validate-article-images.mjs"
+    "validate:images": "node scripts/validate-article-images.mjs",
+    "smoke:production": "node scripts/smoke-test-production.mjs"
   },
   "dependencies": {
     "github-slugger": "^2.0.0",
