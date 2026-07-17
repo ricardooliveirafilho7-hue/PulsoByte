@@ -7,7 +7,7 @@ export const site = {
   locale: "pt-BR",
   author: "Redação PulsoByte",
   email: "contato@pulsobyte.com.br",
-  adsenseClient: process.env.NEXT_PUBLIC_ADSENSE_CLIENT ?? "",
+  adsenseClient: process.env.NEXT_PUBLIC_ADSENSE_CLIENT ?? "ca-pub-8659303689605234",
   articlesPerPage: 12,
 } as const;
 
