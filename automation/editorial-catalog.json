@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "generatedBy": "scripts/generate-editorial-catalog.mjs",
   "note": "Arquivo gerado automaticamente. NÃO edite manualmente: rode npm run catalog:generate.",
-  "articleCount": 14,
+  "articleCount": 15,
   "articles": [
     {
       "slug": "assistentes-de-ia-no-trabalho",
@@ -50,6 +50,37 @@
       "coverImage": "/images/articles/busca-com-ia-como-muda-a-internet.webp",
       "coverSha256": "bb5428451b40b5a34ffb1dbbed5afe1bee7d9e42bf8ced3d5e4985194babdd59",
       "coverPerceptualHash": "1111111110001111110011111100111111001001111011001100000011000001",
+      "internalImages": []
+    },
+    {
+      "slug": "como-liberar-espaco-no-celular-sem-apagar-o-que-importa",
+      "file": "content/articles/como-liberar-espaco-no-celular-sem-apagar-o-que-importa.mdx",
+      "status": "published",
+      "title": "Como liberar espaço no celular sem apagar o que importa",
+      "normalizedTitle": "como liberar espaco no celular sem apagar o que importa",
+      "publishedAt": "2026-07-17",
+      "updatedAt": "2026-07-17",
+      "category": "guias",
+      "contentType": "guide",
+      "publicationSlot": "morning",
+      "automationRunId": "2026-07-17-morning",
+      "topicKey": "liberar-espaco-celular-sem-perder-arquivos",
+      "primaryEntity": "Armazenamento do celular",
+      "normalizedPrimaryEntity": "armazenamento do celular",
+      "searchIntent": "practical",
+      "primarySourceUrl": "https://support.google.com/android/answer/7431795?hl=pt-BR",
+      "sourceUrls": [
+        "https://support.apple.com/pt-br/108429",
+        "https://support.google.com/android/answer/7431795?hl=pt-BR",
+        "https://support.google.com/googleone/answer/6374270?hl=pt-br"
+      ],
+      "sourceDomains": [
+        "apple.com",
+        "google.com"
+      ],
+      "coverImage": "/images/articles/como-liberar-espaco-no-celular-sem-apagar-o-que-importa.webp",
+      "coverSha256": "628c2fcea5cb47af07c43f5b44b501048e18748cc7400c02c0e4b10ab8912610",
+      "coverPerceptualHash": "1100001111000011110000111100001111011011100110111001101111011011",
       "internalImages": []
     },
     {
