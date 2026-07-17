@@ -8,6 +8,9 @@ concurrency:
   group: automated-content-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
+env:
+  PRODUCTION_SITE: ${{ vars.PRODUCTION_SITE || 'https://pulso-byte.vercel.app' }}
+
 permissions:
   contents: read
   pull-requests: read
@@ -18,18 +21,20 @@ jobs:
   quality:
     name: Quality checks
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     steps:
-      - name: Checkout pull request
+      - name: Checkout synthetic pull request merge
         uses: actions/checkout@v4
         with:
+          ref: refs/pull/${{ github.event.pull_request.number }}/merge
           fetch-depth: 0
 
       - name: Validate automated article scope
         if: startsWith(github.event.pull_request.head.ref, 'automation/artigo-')
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
         shell: bash
         run: |
@@ -40,18 +45,20 @@ jobs:
             exit 1
           fi
 
-          mapfile -t changes < <(git diff --name-status "${BASE_SHA}"...HEAD)
+          git fetch --no-tags origin "${BASE_SHA}" "${HEAD_SHA}"
+          mapfile -t changes < <(git diff --name-status "${BASE_SHA}" "${HEAD_SHA}")
           article_count=0
           cover_count=0
           internal_count=0
           article_path=""
           cover_path=""
+          internal_paths=()
 
           for change in "${changes[@]}"; do
             status="${change%%$'\t'*}"
             file="${change#*$'\t'}"
-            if [[ "${status}" != "A" && "${status}" != "M" ]]; then
-              echo "Only added or modified article assets are allowed: ${change}"
+            if [[ "${status}" != "A" ]]; then
+              echo "Automated article PRs may only add new files: ${change}"
               exit 1
             fi
             case "${file}" in
@@ -62,7 +69,7 @@ jobs:
                 if [[ -f "content/articles/${name}.mdx" ]]; then
                   cover_count=$((cover_count + 1)); cover_path="${file}"
                 else
-                  internal_count=$((internal_count + 1))
+                  internal_count=$((internal_count + 1)); internal_paths+=("${file}")
                 fi
                 ;;
               *)
@@ -73,7 +80,7 @@ jobs:
           done
 
           if [[ "${article_count}" -ne 1 || "${cover_count}" -ne 1 || "${internal_count}" -gt 3 ]]; then
-            echo "Expected one article, one matching WebP cover and at most three internal images."
+            echo "Expected one new article, one matching WebP cover and at most three new internal images."
             exit 1
           fi
 
@@ -82,10 +89,18 @@ jobs:
             echo "Cover filename must match article slug."
             exit 1
           }
-          grep -q "^slug: [\"']\?${slug}[\"']\?$" "${article_path}" || {
+          grep -Eq "^slug: [\"']?${slug}[\"']?$" "${article_path}" || {
             echo "Frontmatter slug does not match filename."
             exit 1
           }
+
+          for internal_path in "${internal_paths[@]}"; do
+            public_path="/${internal_path#public/}"
+            grep -Fq "${public_path}" "${article_path}" || {
+              echo "Internal image is not referenced by the article: ${internal_path}"
+              exit 1
+            }
+          done
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -113,6 +128,12 @@ jobs:
       - name: Build production site
         run: npm run build
 
+      - name: Check patch whitespace
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: git diff --check "${BASE_SHA}" "${HEAD_SHA}"
+
   auto-merge-automated-article:
     name: Auto-merge automated article
     needs: quality
@@ -121,10 +142,10 @@ jobs:
         needs.quality.result == 'success' &&
         github.event.pull_request.draft == false &&
         github.event.pull_request.head.repo.full_name == github.repository &&
-        startsWith(github.event.pull_request.head.ref, 'automation/')
+        startsWith(github.event.pull_request.head.ref, 'automation/artigo-')
       }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     concurrency:
       group: automated-content-merge-${{ github.repository }}
       cancel-in-progress: false
@@ -160,54 +181,57 @@ jobs:
         run: |
           set -euo pipefail
 
-          for attempt in $(seq 1 60); do
-            commit_state="$(
-              gh api "repos/${GITHUB_REPOSITORY}/commits/${HEAD_SHA}/status" \
-                --jq '[.statuses[] | select(.context | test("Vercel"; "i"))][0].state // "missing"' \
-                2>/dev/null || echo missing
+          vercel_state() {
+            local sha="$1"
+            local status_states check_states combined
+            status_states="$(
+              gh api "repos/${GITHUB_REPOSITORY}/commits/${sha}/status" \
+                --jq '[.statuses[] | select(.context | test("vercel"; "i")) | .state] | unique | join(",")' \
+                2>/dev/null || true
             )"
-
-            check_state="$(
+            check_states="$(
               gh api -H 'Accept: application/vnd.github+json' \
-                "repos/${GITHUB_REPOSITORY}/commits/${HEAD_SHA}/check-runs" \
-                --jq '[.check_runs[] | select(.name | test("Vercel"; "i"))][0] | if . == null then "missing" elif .status != "completed" then .status else (.conclusion // "missing") end' \
-                2>/dev/null || echo missing
+                "repos/${GITHUB_REPOSITORY}/commits/${sha}/check-runs" \
+                --jq '[.check_runs[] | select(.name | test("vercel"; "i")) | if .status != "completed" then .status else (.conclusion // "missing") end] | unique | join(",")' \
+                2>/dev/null || true
             )"
+            combined="${status_states},${check_states}"
 
-            echo "Attempt ${attempt}/60 — Vercel status=${commit_state}; check=${check_state}"
-
-            if [[ "${commit_state}" == "success" || "${check_state}" == "success" ]]; then
-              echo "Vercel preview passed."
-              exit 0
+            if grep -Eqi 'pending|queued|in_progress|requested|waiting' <<<"${combined}"; then
+              echo pending
+            elif grep -Eqi 'failure|error|cancelled|timed_out|action_required|startup_failure|stale' <<<"${combined}"; then
+              echo failure
+            elif grep -Eqi 'success' <<<"${combined}"; then
+              echo success
+            else
+              echo missing
             fi
+          }
 
-            case "${commit_state}" in
-              failure|error)
-                echo "Vercel preview failed with status '${commit_state}'."
-                exit 1
-                ;;
-            esac
-
-            case "${check_state}" in
-              failure|cancelled|timed_out|action_required|startup_failure|stale)
-                echo "Vercel preview failed with check conclusion '${check_state}'."
-                exit 1
-                ;;
-            esac
-
+          for attempt in $(seq 1 120); do
+            state="$(vercel_state "${HEAD_SHA}")"
+            echo "Preview attempt ${attempt}/120 — Vercel=${state}"
+            [[ "${state}" == "success" ]] && exit 0
+            [[ "${state}" == "failure" ]] && exit 1
             sleep 10
           done
 
           echo "Timed out waiting for the Vercel preview."
           exit 1
 
-      - name: Confirm base has not changed since validation
+      - name: Confirm validated refs are unchanged
         shell: bash
         run: |
           set -euo pipefail
           current_base="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/${BASE_BRANCH}" --jq '.object.sha')"
+          current_head="$(gh pr view "${PR_URL}" --json headRefOid --jq '.headRefOid')"
+
           if [[ "${current_base}" != "${BASE_SHA}" ]]; then
             echo "Base changed from ${BASE_SHA} to ${current_base}; synchronize and validate again."
+            exit 1
+          fi
+          if [[ "${current_head}" != "${HEAD_SHA}" ]]; then
+            echo "Head changed from ${HEAD_SHA} to ${current_head}; validate the new commit first."
             exit 1
           fi
 
@@ -215,39 +239,89 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          gh pr merge "${PR_URL}" --squash --delete-branch
+          gh pr merge "${PR_URL}" --squash --delete-branch --match-head-commit "${HEAD_SHA}"
 
       - name: Verify production publication
         shell: bash
         run: |
           set -euo pipefail
+
+          vercel_state() {
+            local sha="$1"
+            local status_states check_states combined
+            status_states="$(
+              gh api "repos/${GITHUB_REPOSITORY}/commits/${sha}/status" \
+                --jq '[.statuses[] | select(.context | test("vercel"; "i")) | .state] | unique | join(",")' \
+                2>/dev/null || true
+            )"
+            check_states="$(
+              gh api -H 'Accept: application/vnd.github+json' \
+                "repos/${GITHUB_REPOSITORY}/commits/${sha}/check-runs" \
+                --jq '[.check_runs[] | select(.name | test("vercel"; "i")) | if .status != "completed" then .status else (.conclusion // "missing") end] | unique | join(",")' \
+                2>/dev/null || true
+            )"
+            combined="${status_states},${check_states}"
+
+            if grep -Eqi 'pending|queued|in_progress|requested|waiting' <<<"${combined}"; then
+              echo pending
+            elif grep -Eqi 'failure|error|cancelled|timed_out|action_required|startup_failure|stale' <<<"${combined}"; then
+              echo failure
+            elif grep -Eqi 'success' <<<"${combined}"; then
+              echo success
+            else
+              echo missing
+            fi
+          }
+
           article_path="$(
             gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files" --paginate \
-              --jq '[.[] | select(.filename | startswith("content/articles/") and endswith(".mdx"))][0].filename'
+              --jq '[.[] | select(.status == "added" and (.filename | startswith("content/articles/") and endswith(".mdx")))][0].filename // empty'
           )"
+          [[ -n "${article_path}" ]] || { echo "No added article found in PR ${PR_NUMBER}."; exit 1; }
           slug="$(basename "${article_path}" .mdx)"
-          merge_sha="$(gh pr view "${PR_URL}" --json mergeCommit --jq '.mergeCommit.oid')"
 
-          production_ready=false
-          for attempt in $(seq 1 60); do
-            state="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${merge_sha}/status" --jq '[.statuses[] | select(.context | test("Vercel"; "i"))][0].state // "missing"' 2>/dev/null || echo missing)"
-            echo "Production attempt ${attempt}/60 — Vercel=${state}"
-            if [[ "${state}" == "success" ]]; then
-              production_ready=true
-              break
-            fi
-            [[ "${state}" == "failure" || "${state}" == "error" ]] && exit 1
+          merge_sha=""
+          for attempt in $(seq 1 30); do
+            merge_sha="$(gh pr view "${PR_URL}" --json mergeCommit --jq '.mergeCommit.oid // empty' 2>/dev/null || true)"
+            [[ -n "${merge_sha}" ]] && break
+            echo "Merge commit not available yet (${attempt}/30)."
+            sleep 2
+          done
+          [[ -n "${merge_sha}" ]] || { echo "Unable to resolve merge commit."; exit 1; }
+
+          for attempt in $(seq 1 120); do
+            state="$(vercel_state "${merge_sha}")"
+            echo "Production attempt ${attempt}/120 — Vercel=${state}"
+            [[ "${state}" == "success" ]] && break
+            [[ "${state}" == "failure" ]] && exit 1
+            [[ "${attempt}" -eq 120 ]] && { echo "Timed out waiting for production deployment."; exit 1; }
             sleep 10
           done
-          [[ "${production_ready}" == "true" ]] || { echo "Timed out waiting for production deployment."; exit 1; }
 
-          site="https://pulso-byte.vercel.app"
-          page="$(curl --fail --silent --show-error --retry 5 --retry-all-errors "${site}/artigos/${slug}")"
-          image_headers="$(curl --fail --silent --show-error --head --retry 5 --retry-all-errors "${site}/images/articles/${slug}.webp")"
-          sitemap="$(curl --fail --silent --show-error --retry 5 --retry-all-errors "${site}/sitemap.xml")"
+          site="${PRODUCTION_SITE%/}"
+          page_file="$(mktemp)"
+          header_file="$(mktemp)"
+          sitemap_file="$(mktemp)"
+          trap 'rm -f "${page_file}" "${header_file}" "${sitemap_file}"' EXIT
 
-          grep -q '<link rel="canonical"' <<<"${page}"
-          grep -q 'application/ld+json' <<<"${page}"
-          grep -qi 'content-type: image/webp' <<<"${image_headers}"
-          grep -q "/artigos/${slug}" <<<"${sitemap}"
+          curl --fail --location --silent --show-error --retry 8 --retry-delay 5 --retry-all-errors \
+            "${site}/artigos/${slug}" --output "${page_file}"
+          curl --fail --location --silent --show-error --head --retry 8 --retry-delay 5 --retry-all-errors \
+            "${site}/images/articles/${slug}.webp" --output "${header_file}"
+          curl --fail --location --silent --show-error --retry 8 --retry-delay 5 --retry-all-errors \
+            "${site}/sitemap.xml" --output "${sitemap_file}"
+
+          node - "${page_file}" <<'NODE'
+          const fs = require("node:fs");
+          const html = fs.readFileSync(process.argv[2], "utf8");
+          const linkTags = html.match(/<link\b[^>]*>/gi) ?? [];
+          const hasCanonical = linkTags.some((tag) => /\brel\s*=\s*["']?canonical["']?/i.test(tag));
+          const scriptTags = html.match(/<script\b[^>]*>/gi) ?? [];
+          const hasJsonLd = scriptTags.some((tag) => /\btype\s*=\s*["']application\/ld\+json["']/i.test(tag));
+          if (!hasCanonical) throw new Error("canonical link not found");
+          if (!hasJsonLd) throw new Error("JSON-LD script not found");
+          NODE
+
+          grep -Eqi '^content-type:[[:space:]]*image/webp(?:;|[[:space:]]|$)' "${header_file}"
+          grep -Fq "/artigos/${slug}" "${sitemap_file}"
           echo "Production verified for /artigos/${slug} at ${merge_sha}."
