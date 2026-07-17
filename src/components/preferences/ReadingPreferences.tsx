@@ -100,11 +100,16 @@ function Choice<Value extends string>({
 export function ReadingPreferences() {
   const [open, setOpen] = useState(false);
   const [prefs, setPrefs] = useState<Prefs>(DEFAULTS);
+  // Espelho síncrono do estado: garante que cliques em sequência rápida não
+  // usem preferências desatualizadas.
+  const prefsRef = useRef<Prefs>(DEFAULTS);
   const rootRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
 
   useEffect(() => {
-    setPrefs(readPrefs());
+    const stored = readPrefs();
+    prefsRef.current = stored;
+    setPrefs(stored);
   }, []);
 
   // Com o tema em "Sistema", acompanha mudanças da preferência do SO.
@@ -132,19 +137,17 @@ export function ReadingPreferences() {
     };
   }, [open]);
 
-  const update = useCallback(
-    (partial: Partial<Prefs>) => {
-      const next = { ...prefs, ...partial };
-      setPrefs(next);
-      applyPrefs(next);
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      } catch {
-        // Sem armazenamento disponível, a preferência vale só para a sessão.
-      }
-    },
-    [prefs]
-  );
+  const update = useCallback((partial: Partial<Prefs>) => {
+    const next = { ...prefsRef.current, ...partial };
+    prefsRef.current = next;
+    setPrefs(next);
+    applyPrefs(next);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      // Sem armazenamento disponível, a preferência vale só para a sessão.
+    }
+  }, []);
 
   return (
     <div ref={rootRef} className="relative">
