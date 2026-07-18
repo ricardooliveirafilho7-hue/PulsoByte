@@ -7,7 +7,7 @@
  * NÃO presume o caminho dos artigos: lê de automation/config/pulsobyte.config.json
  * o campo "contentGlobs" (lista de globs). Se a config não existir ou não
  * apontar caminhos, o script AVISA e devolve inventário vazio em vez de chutar.
- * 🔍 CONFIRMAR NO REPO: preencher contentGlobs com o caminho real dos artigos.
+ * A instalação PulsoByte varre recursivamente os MDX em content/articles.
  *
  * Extrai frontmatter YAML simples (chave: valor e listas inline [a, b]).
  * Para schemas complexos, ajuste o parser ou aponte para o validador do projeto.
@@ -146,7 +146,7 @@ function main() {
   if (cfg._missing) {
     warnings.push(
       `Config não encontrada (${args.config || DEFAULT_CONFIG}). ` +
-        `Preencha contentGlobs com o caminho real dos artigos. 🔍`
+        `Defina contentGlobs; no PulsoByte o caminho é content/articles/**/*.mdx.`
     );
   } else if (cfg._invalid) {
     warnings.push(`Config inválida: ${cfg._error}`);
@@ -154,7 +154,7 @@ function main() {
 
   const globs = (cfg && cfg.contentGlobs) || [];
   if (!globs.length && !cfg._missing && !cfg._invalid) {
-    warnings.push("contentGlobs vazio na config. 🔍 Aponte para os artigos reais.");
+    warnings.push("contentGlobs vazio na config; esperado content/articles/**/*.mdx.");
   }
 
   const seen = new Set();

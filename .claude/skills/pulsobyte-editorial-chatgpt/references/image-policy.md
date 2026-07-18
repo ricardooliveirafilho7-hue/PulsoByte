@@ -20,8 +20,9 @@ ausência de conteúdo enganoso. A imagem principal deve representar o assunto
 imediatamente.
 
 ## Processamento (padrão do projeto)
-🔍 CONFIRMAR NO REPO: formato (ex.: WebP), dimensões e pasta de imagens reais.
-Baixar → salvar no local padrão → converter ao formato do projeto → redimensionar
+Use WebP em `public/images/articles/`, com pelo menos 1200×675 px e no máximo
+512000 bytes. O arquivo da capa usa exatamente o slug do artigo. Baixar → salvar
+no local padrão → converter ao formato do projeto → redimensionar
 sem deformar → comprimir sem perda visual excessiva → remover metadados
 desnecessários → nome descritivo → alt text específico → registrar fonte/crédito →
 conferir caminho no artigo → confirmar renderização.

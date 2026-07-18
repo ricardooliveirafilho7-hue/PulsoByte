@@ -10,8 +10,8 @@
     },
     "evening": {
       "labelPt": "noite",
-      "cronUTC": "0 23 * * *",
-      "_localTime": "20:00 America/Sao_Paulo"
+      "cronUTC": "30 23 * * *",
+      "_localTime": "20:30 America/Sao_Paulo"
     }
   },
   "research": {
@@ -24,6 +24,13 @@
   ],
   "articleSchema": {
     "_comment": "Campos reais do frontmatter e campos obrigatórios para artigos automatizados, conforme os artigos MDX e o validador oficial do projeto.",
+    "automationFields": [
+      "publicationSlot",
+      "automationRunId",
+      "topicKey",
+      "primaryEntity",
+      "searchIntent"
+    ],
     "requiredFields": [
       "title",
       "description",
@@ -36,6 +43,12 @@
       "status",
       "contentType",
       "featured",
+      "coverImage",
+      "coverImageAlt",
+      "seoTitle",
+      "seoDescription"
+    ],
+    "automatedRequiredFields": [
       "publicationSlot",
       "automationRunId",
       "topicKey",
@@ -51,13 +64,12 @@
       "coverImageLicense",
       "coverImageType",
       "coverImagePosition",
-      "seoTitle",
-      "seoDescription"
+      "coverImagePosition"
     ],
     "patterns": {
       "publishedAt": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
       "updatedAt": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
-      "automationRunId": "^[0-9]{4}-[0-9]{2}-[0-9]{2}-(morning|evening)$",
+      "automationRunId": "^[0-9]{4}-[0-9]{2}-[0-9]{2}-(morning|evening)(-(0[2-9]|[1-9][0-9]))?$",
       "publicationSlot": "^(morning|evening)$",
       "slug": "^[a-z0-9]+(-[a-z0-9]+)*$",
       "coverImage": "^/images/articles/[a-z0-9]+(-[a-z0-9]+)*\\.webp$"
@@ -84,13 +96,15 @@
     "minHeight": 675
   },
   "commands": {
-    "_comment": "Comandos baseados nos scripts reais do package.json; não existe script install.",
-    "install": "",
+    "_comment": "Comandos reais usados pelo projeto e pelos workflows.",
+    "install": "npm ci",
     "lint": "npm run lint",
     "typecheck": "npm run typecheck",
     "test": "npm test",
     "build": "npm run build",
-    "validateContent": "npm run validate:content"
+    "validateCatalog": "npm run validate:catalog",
+    "validateContent": "npm run validate:content",
+    "validateImages": "npm run validate:images"
   },
   "vercel": {
     "_comment": "IDs e tokens vêm de secrets do workflow e não ficam neste arquivo.",

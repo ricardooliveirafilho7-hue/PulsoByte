@@ -28,7 +28,8 @@ e termos relacionados. Rode `scripts/detect-duplicate-content.mjs`.
 Combine (conforme o schema real): entidade + produto/serviço + evento +
 versão/recurso + data relevante quando necessária.
 Exemplo conceitual: `openai-chatgpt-novo-recurso-julho-2026`.
-🔍 CONFIRMAR NO REPO: formato exato do topicKey se o projeto já usar um.
+O formato aceito é slug ASCII em minúsculas, com termos separados por hífen,
+conforme `validate-article-content-v2.mjs`.
 
 Além do topicKey, registre internamente: entidade principal, evento principal,
 palavras relacionadas, títulos alternativos, possíveis slugs, assunto normalizado.

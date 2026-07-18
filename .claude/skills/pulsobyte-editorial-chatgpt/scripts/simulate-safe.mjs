@@ -12,7 +12,7 @@
  * ---------------------------------------------------------------------------
  */
 import { execFileSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -52,6 +52,9 @@ function run(script, extra = []) {
 const args = parseArgs(process.argv);
 const slot = args.slot || "morning";
 const forceDate = args.forceDate || "2099-01-01"; // data claramente de teste
+const statePath = join(tmpdir(), `pulsobyte-state-sim-${process.pid}.jsonl`);
+const inventoryPath = join(tmpdir(), `pulsobyte-inv-sim-${process.pid}.json`);
+writeFileSync(statePath, "", "utf8");
 
 console.log("=== SIMULAÇÃO SEGURA (nenhum conteúdo será produzido) ===\n");
 
@@ -64,10 +67,9 @@ steps.push(run("resolve-editorial-run.mjs", ["--slot", slot, "--slug", "teste-si
 const runId = steps[0].output?.automationRunId || `${forceDate}-${slot}`;
 
 // 2. validar identidade (turno de teste — não deve estar ocupado)
-steps.push(run("validate-run-identity.mjs", ["--runId", runId]));
+steps.push(run("validate-run-identity.mjs", ["--runId", runId, "--state", statePath]));
 
 // 3. inventário (usa a config atual; pode vir vazio se contentGlobs não setado)
-const inventoryPath = join(tmpdir(), "pulsobyte-inv-sim.json");
 steps.push(run("inspect-editorial-inventory.mjs", ["--out", inventoryPath]));
 
 // 4. detecção de duplicata (candidato fictício vs inventário)
@@ -92,4 +94,6 @@ console.log("=== Resultado geral:", allOk ? "INFRAESTRUTURA OK" : "REVISAR ITENS
 console.log("\nObs.: inventário/duplicata podem 'avisar' se contentGlobs ainda não");
 console.log("aponta para artigos reais — isso é esperado antes de configurar o repo.");
 
+rmSync(statePath, { force: true });
+rmSync(inventoryPath, { force: true });
 process.exit(allOk ? 0 : 1);
