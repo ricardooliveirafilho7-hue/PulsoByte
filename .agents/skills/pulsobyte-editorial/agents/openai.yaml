@@ -1,0 +1,4 @@
+interface:
+  display_name: "PulsoByte Editorial"
+  short_description: "Executa o pipeline editorial com segurança."
+  default_prompt: "Use $pulsobyte-editorial para executar o turno editorial da PulsoByte com identidade, idempotência, validação e PR seguro."
