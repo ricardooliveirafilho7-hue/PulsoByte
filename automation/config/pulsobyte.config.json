@@ -1,0 +1,116 @@
+{
+  "_comment": "Fonte única de configuração da automação editorial PulsoByte, alinhada à estrutura real do repositório.",
+  "repository": "ricardooliveirafilho7-hue/PulsoByte",
+  "timezone": "America/Sao_Paulo",
+  "slots": {
+    "morning": {
+      "labelPt": "manha",
+      "cronUTC": "0 9 * * *",
+      "_localTime": "06:00 America/Sao_Paulo"
+    },
+    "evening": {
+      "labelPt": "noite",
+      "cronUTC": "30 23 * * *",
+      "_localTime": "20:30 America/Sao_Paulo"
+    }
+  },
+  "research": {
+    "minCandidates": 12,
+    "maxCandidates": 25,
+    "freshnessHoursPriority": 72
+  },
+  "contentGlobs": [
+    "content/articles/**/*.mdx"
+  ],
+  "articleSchema": {
+    "_comment": "Campos reais do frontmatter e campos obrigatórios para artigos automatizados, conforme os artigos MDX e o validador oficial do projeto.",
+    "automationFields": [
+      "publicationSlot",
+      "automationRunId",
+      "topicKey",
+      "primaryEntity",
+      "searchIntent"
+    ],
+    "requiredFields": [
+      "title",
+      "description",
+      "slug",
+      "category",
+      "tags",
+      "author",
+      "publishedAt",
+      "updatedAt",
+      "status",
+      "contentType",
+      "featured",
+      "coverImage",
+      "coverImageAlt",
+      "seoTitle",
+      "seoDescription"
+    ],
+    "automatedRequiredFields": [
+      "publicationSlot",
+      "automationRunId",
+      "topicKey",
+      "primaryEntity",
+      "searchIntent",
+      "primarySourceUrl",
+      "coverImage",
+      "coverImageAlt",
+      "coverImageCaption",
+      "coverImageCredit",
+      "coverImageCreditUrl",
+      "coverImageSource",
+      "coverImageLicense",
+      "coverImageType",
+      "coverImagePosition",
+      "coverImagePosition"
+    ],
+    "patterns": {
+      "publishedAt": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+      "updatedAt": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+      "automationRunId": "^[0-9]{4}-[0-9]{2}-[0-9]{2}-(morning|evening)(-(0[2-9]|[1-9][0-9]))?$",
+      "publicationSlot": "^(morning|evening)$",
+      "slug": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "coverImage": "^/images/articles/[a-z0-9]+(-[a-z0-9]+)*\\.webp$"
+    },
+    "allowedCategories": [
+      "aplicativos",
+      "comparativos",
+      "guias",
+      "inteligencia-artificial",
+      "negocios-digitais",
+      "noticias",
+      "tecnologia"
+    ]
+  },
+  "imagePolicy": {
+    "_comment": "Capas locais servidas de public/images/articles e validadas exclusivamente como WebP.",
+    "publicDir": "public",
+    "articleImagesDir": "public/images/articles",
+    "allowedExt": [
+      ".webp"
+    ],
+    "maxBytes": 512000,
+    "minWidth": 1200,
+    "minHeight": 675
+  },
+  "commands": {
+    "_comment": "Comandos reais usados pelo projeto e pelos workflows.",
+    "install": "npm ci",
+    "lint": "npm run lint",
+    "typecheck": "npm run typecheck",
+    "test": "npm test",
+    "build": "npm run build",
+    "validateCatalog": "npm run validate:catalog",
+    "validateContent": "npm run validate:content",
+    "validateImages": "npm run validate:images"
+  },
+  "vercel": {
+    "_comment": "IDs e tokens vêm de secrets do workflow e não ficam neste arquivo.",
+    "projectIdEnv": "VERCEL_PROJECT_ID",
+    "tokenEnv": "VERCEL_TOKEN",
+    "teamIdEnv": "VERCEL_TEAM_ID"
+  },
+  "statePath": "automation/state/execucoes.jsonl"
+}
