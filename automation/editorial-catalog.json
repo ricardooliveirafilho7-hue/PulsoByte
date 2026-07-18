@@ -212,8 +212,8 @@
       "slug": "guia-passkeys-adeus-senhas",
       "file": "content/articles/guia-passkeys-adeus-senhas.mdx",
       "status": "published",
-      "title": "Guia das passkeys: como começar a viver sem senhas",
-      "normalizedTitle": "guia das passkeys como comecar a viver sem senhas",
+      "title": "O fim das senhas está chegando: entenda o que são passkeys",
+      "normalizedTitle": "o fim das senhas esta chegando entenda o que sao passkeys",
       "publishedAt": "2026-07-01",
       "updatedAt": "2026-07-01",
       "category": "guias",
@@ -225,8 +225,19 @@
       "normalizedPrimaryEntity": null,
       "searchIntent": null,
       "primarySourceUrl": null,
-      "sourceUrls": [],
-      "sourceDomains": [],
+      "sourceUrls": [
+        "https://fidoalliance.org/passkeys/",
+        "https://support.apple.com/109016",
+        "https://support.google.com/accounts/answer/13548313",
+        "https://support.microsoft.com/windows/security/identity-signin/create-and-save-a-passkey",
+        "https://support.microsoft.com/windows/security/identity-signin/what-are-passkeys-and-why-they-matter"
+      ],
+      "sourceDomains": [
+        "apple.com",
+        "fidoalliance.org",
+        "google.com",
+        "microsoft.com"
+      ],
       "coverImage": "/images/articles/guia-passkeys-adeus-senhas.webp",
       "coverSha256": "f6e14df4133ede3bbc3a260486531426ee52db68e1108218f7696cdae8b90599",
       "coverPerceptualHash": "0011111011111010011001101110011011000010100100100001000000011011",

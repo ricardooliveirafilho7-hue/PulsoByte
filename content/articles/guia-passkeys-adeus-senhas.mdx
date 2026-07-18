@@ -1,6 +1,6 @@
 ---
-title: "Guia das passkeys: como começar a viver sem senhas"
-description: "As passkeys substituem senhas por biometria e são mais seguras contra phishing. Veja como ativar nas suas contas mais importantes."
+title: "O fim das senhas está chegando: entenda o que são passkeys"
+description: "Entenda como as passkeys funcionam, por que são mais seguras contra phishing e como começar a usá-las no celular e no computador."
 slug: "guia-passkeys-adeus-senhas"
 category: "guias"
 tags:
@@ -24,54 +24,252 @@ coverImageSource: "Unsplash"
 coverImageLicense: "Licença Unsplash"
 coverImageType: "photo"
 coverImagePosition: "50% 48%"
-seoTitle: "Passkeys: guia para abandonar as senhas com segurança"
-seoDescription: "O que são passkeys, por que são mais seguras que senhas e o passo a passo para ativá-las nas suas principais contas."
+seoTitle: "O que são passkeys e por que são mais seguras que senhas"
+seoDescription: "Entenda como as passkeys funcionam, por que são mais seguras que senhas e como começar a usá-las no celular e no computador."
 ---
 
-A senha é o elo mais fraco da sua vida digital: pode ser adivinhada, vazada ou roubada por
-phishing. As passkeys resolvem os três problemas de uma vez — e já funcionam nas principais
-contas que você usa.
+Durante muitos anos, criar uma conta na internet significava inventar uma senha, repeti-la em
+vários dispositivos e torcer para não esquecê-la. Senhas fracas podem ser descobertas; senhas
+fortes costumam ser difíceis de memorizar. O resultado é a reutilização da mesma combinação em
+vários serviços — e um vazamento passa a ameaçar diversas contas.
+
+Uma tecnologia chamada **passkey**, ou chave de acesso, começa a mudar essa situação. Com ela,
+você entra em aplicativos e sites do mesmo modo que desbloqueia o celular: impressão digital,
+reconhecimento facial, PIN ou padrão de desbloqueio.
+
+<QuickSummary
+  items={[
+    "Passkeys substituem senhas por credenciais criptográficas protegidas pelo seu aparelho.",
+    "Elas são resistentes a phishing e não podem ser reutilizadas em serviços diferentes.",
+    "A biometria desbloqueia a credencial localmente e não é enviada ao site.",
+    "A adoção ainda está em andamento, por isso métodos de recuperação continuam importantes.",
+  ]}
+/>
 
 ## O que é uma passkey
 
-Uma passkey é um par de chaves criptográficas: uma fica guardada no seu aparelho, protegida por
-biometria ou PIN; a outra fica no serviço. No login, o aparelho prova quem você é sem enviar
-nenhum segredo pela rede — por isso não existe o que vazar ou "pescar".
+<Definition term="Passkey">
+  É uma credencial digital criada para substituir a senha. Ela usa um par de chaves
+  criptográficas e é desbloqueada pela proteção do seu aparelho.
+</Definition>
 
-## Como migrar
+Uma das chaves fica armazenada no dispositivo ou no gerenciador de credenciais. A outra é
+registrada no serviço em que a conta foi criada. Para entrar, o aparelho assina um desafio e
+comprova que possui a chave privada correta sem transmiti-la ao site.
+
+Na prática, a confirmação pode usar:
+
+- impressão digital;
+- reconhecimento facial;
+- PIN do celular ou computador;
+- padrão de desbloqueio;
+- chave física de segurança, quando compatível.
+
+O servidor guarda a chave pública, não o segredo necessário para autorizar o acesso. Esse desenho
+reduz o impacto de vazamentos de credenciais e elimina uma senha que poderia ser adivinhada ou
+reutilizada.
+
+## Como uma passkey funciona na prática
+
+Imagine que você queira entrar em uma conta pelo notebook. Depois de informar o e-mail ou
+selecionar a conta, o site oferece **“Entrar com uma chave de acesso”**. A partir daí, você pode
+confirmar com o rosto, a impressão digital ou o PIN do computador.
+
+Se a passkey estiver no celular, o computador pode mostrar um QR code. Você o escaneia, confirma
+o acesso no telefone e os aparelhos verificam que estão próximos. O login é liberado sem que uma
+senha seja digitada ou transmitida.
+
+## Por que as passkeys são mais seguras
+
+### Elas são resistentes a phishing
+
+Em um golpe de phishing, uma página falsa imita um banco, rede social ou serviço conhecido para
+capturar a senha. Passkeys são vinculadas ao site ou aplicativo legítimo para o qual foram criadas.
+Por isso, a página falsa não consegue receber e reutilizar a credencial como faria com uma senha.
+
+### Não podem ser adivinhadas
+
+Uma passkey não é uma palavra, uma data ou uma sequência numérica. Ela é criada
+criptograficamente pelo dispositivo e não depende de algo que a pessoa consiga memorizar.
+
+### Cada serviço recebe uma credencial diferente
+
+O vazamento de uma senha reutilizada pode abrir várias contas. Passkeys são exclusivas para cada
+site ou aplicativo: a credencial de um serviço não serve para entrar em outro.
+
+### O serviço não armazena seu segredo principal
+
+O site recebe apenas a chave pública. A chave privada permanece protegida no dispositivo, no
+gerenciador de credenciais ou em uma chave física de segurança.
+
+<WhyItMatters>
+  A combinação de vínculo com o domínio legítimo, credenciais únicas e ausência de segredo
+  compartilhado no servidor bloqueia os caminhos mais comuns usados para roubar senhas.
+</WhyItMatters>
+
+## A impressão digital é enviada para o site?
+
+Não. A biometria normalmente serve apenas para desbloquear a passkey no aparelho. O site recebe
+uma comprovação criptográfica de que a autenticação foi aprovada, não uma cópia da impressão
+digital ou do rosto.
+
+O mesmo vale para o PIN: ele protege o dispositivo e não se transforma na senha da conta.
+
+## É possível usar passkeys em vários dispositivos?
+
+Sim, mas o funcionamento depende de onde a credencial foi salva.
+
+- Em aparelhos Apple, o iCloud Passwords & Keychain pode sincronizar passkeys entre dispositivos
+  aprovados da mesma Conta Apple.
+- No Android e no Chrome, gerenciadores compatíveis, como o Google Password Manager, podem salvar
+  e sincronizar as credenciais.
+- No Windows 11, é possível salvar passkeys no Windows Hello, em um gerenciador sincronizado, no
+  celular ou em uma chave física.
+- Quando a credencial está em outro aparelho próximo, alguns serviços permitem autenticar por QR
+  code.
+
+## O que acontece se o celular for perdido?
+
+Perder o aparelho não significa automaticamente perder todas as contas. Uma passkey sincronizada
+pode voltar a ficar disponível em outro dispositivo depois que você recupera o acesso ao
+gerenciador responsável. Credenciais salvas apenas localmente, porém, dependem de outro método de
+acesso ou recuperação.
+
+Antes de abandonar uma senha, prepare o plano B:
+
+- mantenha e-mail e telefone de recuperação atualizados;
+- proteja a conta principal e o aparelho com um código forte;
+- guarde os códigos de recuperação fornecidos pelo serviço;
+- cadastre mais de uma passkey quando a plataforma permitir;
+- remova dispositivos perdidos da conta assim que possível;
+- não crie passkeys em computadores públicos ou compartilhados.
+
+<Callout type="warning" title="O bloqueio do aparelho protege suas contas">
+  Quem consegue desbloquear um dispositivo pessoal pode conseguir usar as passkeys armazenadas
+  nele. Biometria e um PIN forte continuam essenciais.
+</Callout>
+
+## Passkeys eliminam completamente as senhas?
+
+Ainda não. Muitos sites continuam dependendo de senhas, enquanto outros oferecem passkeys apenas
+como alternativa. Recuperações de conta também podem exigir e-mail, códigos ou verificações
+adicionais.
+
+Durante a transição, use passkeys onde houver suporte e mantenha senhas únicas nas contas que
+ainda precisam delas. Um gerenciador de senhas continua útil para essas credenciais e também pode
+ser o local onde suas passkeys são sincronizadas.
+
+## Como começar a usar
 
 <StepByStep
   steps={[
     {
+      title: "Proteja o aparelho",
+      description:
+        "Ative biometria e escolha um PIN forte. A proteção do dispositivo é o que libera suas passkeys.",
+    },
+    {
       title: "Comece pelo e-mail principal",
       description:
-        "A conta de e-mail recupera todas as outras. Ative a passkey nas configurações de segurança do seu provedor e faça um login de teste.",
+        "Abra as configurações de segurança da conta e procure por “passkey” ou “chave de acesso”. Crie a credencial somente em um aparelho pessoal.",
     },
     {
-      title: "Proteja o gerenciador e as redes",
+      title: "Faça um login de teste",
       description:
-        "Ative passkeys no gerenciador de senhas, nas redes sociais e nos serviços de nuvem. A opção costuma aparecer como “chave de acesso”.",
+        "Saia da conta e confirme que consegue entrar com biometria, PIN ou o aparelho que guarda a passkey.",
     },
     {
-      title: "Cadastre um segundo aparelho",
+      title: "Prepare a recuperação",
       description:
-        "Registre a passkey também no tablet ou no computador. Se perder o celular, você continua entrando nas contas.",
+        "Atualize os contatos, guarde códigos de recuperação e, quando possível, registre uma segunda passkey.",
     },
     {
-      title: "Mantenha uma rota de recuperação",
+      title: "Expanda aos poucos",
       description:
-        "Guarde os códigos de recuperação impressos em local seguro. Eles são o plano B se todos os aparelhos falharem.",
+        "Depois do e-mail, migre conta Apple, Google ou Microsoft, gerenciador de senhas, nuvem e redes sociais compatíveis.",
     },
   ]}
 />
 
-<Callout type="tip">
-  Não é preciso migrar tudo de uma vez. Senha forte + segundo fator continua sendo aceitável
-  para contas menos importantes enquanto o suporte a passkeys se espalha.
-</Callout>
+## Onde encontrar a opção
+
+### Conta Google
+
+Acesse as opções de login da Conta Google, escolha **Chaves de acesso e chaves de segurança** e
+confirme a criação desbloqueando o dispositivo. Criar uma passkey não remove automaticamente os
+outros métodos de autenticação e recuperação existentes.
+
+### iPhone e Mac
+
+Quando um site ou aplicativo compatível oferecer a criação, confirme com Face ID, Touch ID ou o
+código do aparelho. Com o iCloud Passwords & Keychain ativo, a credencial pode ficar disponível
+nos demais dispositivos aprovados da mesma conta.
+
+### Windows 11
+
+O Windows pode salvar passkeys localmente com o Windows Hello ou usar outros provedores. As
+credenciais locais podem ser vistas em **Configurações → Contas → Passkeys**; a disponibilidade
+das opções depende do serviço e da versão instalada.
+
+## Cuidados importantes
+
+Passkeys melhoram a autenticação, mas não tornam ninguém invulnerável. Golpistas ainda podem
+tentar convencer você a aprovar um acesso, compartilhar a tela ou entregar códigos de recuperação.
+
+Combine a tecnologia com:
+
+- bloqueio forte do celular e do computador;
+- atualizações automáticas;
+- atenção aos dispositivos conectados;
+- métodos de recuperação atualizados;
+- senhas únicas onde passkeys ainda não são aceitas.
+
+<FAQ
+  items={[
+    {
+      question: "Passkey e biometria são a mesma coisa?",
+      answer:
+        "Não. A passkey é a credencial criptográfica; a biometria é uma das formas de desbloqueá-la no aparelho.",
+    },
+    {
+      question: "Posso usar passkey sem leitor de impressão digital?",
+      answer:
+        "Sim. Dependendo do aparelho e do serviço, você pode usar reconhecimento facial, PIN, padrão de desbloqueio ou chave física.",
+    },
+    {
+      question: "Preciso apagar minha senha depois de criar uma passkey?",
+      answer:
+        "Não necessariamente. Cada serviço define se a senha continua disponível. Antes de mudar qualquer método, confirme as opções de recuperação.",
+    },
+  ]}
+/>
+
+## Vale a pena usar passkeys agora?
+
+Para a maioria das pessoas, sim. Elas tornam o acesso mais rápido, dispensam a memorização de
+várias combinações e oferecem uma defesa muito maior contra phishing e reutilização de
+credenciais.
+
+A mudança não acontecerá de uma vez. Passkeys e senhas ainda vão conviver por algum tempo. Mesmo
+assim, começar pelas contas mais importantes já reduz o risco causado por senhas fracas, vazadas
+ou roubadas.
 
 ## Conclusão
 
-Passkeys são a primeira alternativa às senhas que é ao mesmo tempo mais segura e mais cômoda.
-Começando pelo e-mail e mantendo um segundo aparelho cadastrado, a transição leva minutos — e
-elimina de vez o risco de phishing nessas contas.
+As senhas não devem desaparecer imediatamente, mas já deixaram de ser a única maneira de proteger
+uma conta. Passkeys usam criptografia e o bloqueio do aparelho para oferecer um acesso mais simples
+e resistente a phishing.
+
+Antes de ativá-las, proteja o dispositivo e atualize os métodos de recuperação. Depois, comece pelo
+e-mail e pelas contas que concentram sua vida digital. A melhor senha do futuro talvez seja
+justamente aquela que você nunca precisará digitar.
+
+<Sources
+  items={[
+    { label: "FIDO Alliance — Passkeys", url: "https://fidoalliance.org/passkeys/" },
+    { label: "Google — Entrar com uma passkey em vez de senha", url: "https://support.google.com/accounts/answer/13548313" },
+    { label: "Apple — Configurar o iCloud Passwords & Keychain", url: "https://support.apple.com/109016" },
+    { label: "Microsoft — O que são passkeys e por que são importantes", url: "https://support.microsoft.com/windows/security/identity-signin/what-are-passkeys-and-why-they-matter" },
+    { label: "Microsoft — Criar e salvar uma passkey", url: "https://support.microsoft.com/windows/security/identity-signin/create-and-save-a-passkey" },
+  ]}
+/>
