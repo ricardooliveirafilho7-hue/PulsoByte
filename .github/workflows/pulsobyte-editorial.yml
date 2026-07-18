@@ -1,0 +1,158 @@
+name: PulsoByte Editorial
+
+# ---------------------------------------------------------------------------
+# Agendamento (cron do GitHub Actions roda SEMPRE em UTC).
+#   06:00 America/Sao_Paulo = 09:00 UTC  -> turno da manhã (morning)
+#   20:00 America/Sao_Paulo = 23:00 UTC  -> turno da noite  (evening)
+# Observação: o Brasil não usa mais horário de verão desde 2019, então o
+# offset é fixo em UTC-3. Se isso mudar, reajuste os horários aqui.
+#
+# Também permite disparo manual (workflow_dispatch) para testes e recuperação.
+# ---------------------------------------------------------------------------
+on:
+  schedule:
+    - cron: "0 9 * * *"    # 06:00 BRT — morning
+    - cron: "0 23 * * *"   # 20:00 BRT — evening
+  workflow_dispatch:
+    inputs:
+      slot:
+        description: "Turno a executar (morning|evening). Se vazio, é inferido pela hora."
+        required: false
+        type: choice
+        options:
+          - ""
+          - morning
+          - evening
+        default: ""
+      mode:
+        description: "Modo (editorial|audit|resume|infrastructure)"
+        required: false
+        type: string
+        default: "editorial"
+
+# Impede duas execuções concorrentes deste workflow.
+concurrency:
+  group: pulsobyte-editorial
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  editorial:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # histórico completo p/ inventário e checagens
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          # Usa .nvmrc se existir; senão cai no 20. 🔍 confirmar versão do projeto.
+          node-version-file: ".nvmrc"
+        continue-on-error: true
+
+      - name: Setup Node (fallback)
+        if: ${{ failure() }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # --------- Determinar o turno ---------
+      # Em schedule, o GitHub não diz qual cron disparou diretamente de forma
+      # trivial, então inferimos pelo horário UTC. Em dispatch, usamos o input.
+      - name: Determinar turno
+        id: slot
+        run: |
+          SLOT="${{ github.event.inputs.slot }}"
+          if [ -z "$SLOT" ]; then
+            HOUR_UTC=$(date -u +%H)
+            # Janela da manhã: ~09 UTC; noite: ~23 UTC. Corte às 15 UTC.
+            if [ "$HOUR_UTC" -lt 15 ]; then
+              SLOT="morning"
+            else
+              SLOT="evening"
+            fi
+          fi
+          echo "slot=$SLOT" >> "$GITHUB_OUTPUT"
+          echo "Turno determinado: $SLOT"
+
+      # --------- Step 1: identidade da execução ---------
+      - name: Resolver execução editorial
+        id: resolve
+        run: node .claude/skills/pulsobyte-editorial-chatgpt/scripts/resolve-editorial-run.mjs --slot "${{ steps.slot.outputs.slot }}"
+
+      # --------- Step 2: validar identidade / trava de turno ---------
+      - name: Validar identidade da execução
+        id: identity
+        run: |
+          node .claude/skills/pulsobyte-editorial-chatgpt/scripts/validate-run-identity.mjs \
+            --runId "${{ steps.resolve.outputs.automation_run_id }}" \
+            --mode "${{ github.event.inputs.mode || 'editorial' }}"
+
+      # --------- Step 3: pesquisa + escrita (Claude Code) ---------
+      # A IA lê o repo, pesquisa, escreve o artigo, cria a branch e commita.
+      # A skill pulsobyte-editorial-chatgpt já está no repo clonado e é carregada.
+      - name: Executar turno editorial (Claude Code)
+        uses: anthropics/claude-code-action@v1
+        with:
+          prompt: |
+            Carregue e siga integralmente a skill `pulsobyte-editorial-chatgpt`
+            no modo `${{ github.event.inputs.mode || 'editorial' }}`.
+            publicationSlot=${{ steps.slot.outputs.slot }}
+            automationRunId=${{ steps.resolve.outputs.automation_run_id }}
+            repository=ricardooliveirafilho7-hue/PulsoByte
+
+            Antes de qualquer decisão editorial, LEIA o repositório (AGENTS.md,
+            README, package.json, schema/validadores, e ao menos 3 artigos reais
+            recentes) e ajuste-se ao padrão real. Rode os scripts determinísticos
+            da skill nas etapas indicadas. Produza no máximo UM artigo, UMA branch
+            (${{ steps.resolve.outputs.branch_prefix }}-<slug>), e pare ao abrir
+            UM Pull Request. Não faça merge. Encerre com o relatório oficial.
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      # --------- Step 4: validações determinísticas ---------
+      # (Executadas também aqui como rede de segurança, além de dentro da skill.)
+      # Ajuste os comandos conforme automation/config/pulsobyte.config.json.
+      - name: Instalar dependências
+        run: npm ci
+        continue-on-error: false
+
+      - name: Lint / Typecheck / Testes / Build
+        run: |
+          set -e
+          npm run lint --if-present
+          npm run typecheck --if-present
+          npm test --if-present
+          npm run build --if-present
+
+      # --------- Upload do estado como artifact (observabilidade) ---------
+      - name: Upload do estado da execução
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: pulsobyte-state-${{ steps.resolve.outputs.automation_run_id }}
+          path: automation/state/execucoes.jsonl
+          if-no-files-found: warn
+
+  # Job separado (opcional) para verificar a publicação DEPOIS do merge.
+  # Dispare-o manualmente ou por um workflow de "PR merged" quando o artigo
+  # for integrado. Mantido separado porque a verificação só faz sentido após
+  # a integração autorizada — não no mesmo run que abre o PR.
+  #
+  # verify:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-node@v4
+  #     - name: Verificar publicação
+  #       run: |
+  #         node .claude/skills/pulsobyte-editorial-chatgpt/scripts/verify-publication.mjs \
+  #           --sha "$MERGED_SHA" --url "$ARTICLE_URL" --slug "$SLUG" --title "$TITLE"
+  #       env:
+  #         VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+  #         VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
