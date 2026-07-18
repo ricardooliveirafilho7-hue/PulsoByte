@@ -28,7 +28,9 @@ O nome da automação em qualquer registro público (PR, commit, relatório) é
 1. **Leia o repositório antes de decidir qualquer coisa.** O schema real dos
    artigos, os comandos do `package.json`, a estrutura de pastas e o padrão de
    frontmatter são a fonte de verdade — não invente estrutura paralela.
-2. **Um turno = um tema = uma branch = um Pull Request.** Nunca mais que isso.
+2. **Uma execução = um tema = um artigo = uma branch = um Pull Request.**
+   Um turno pode ter execuções sequenciais independentes, mas cada
+   `automationRunId` continua estritamente idempotente.
 3. **Regras objetivas são verificadas por scripts, não pela sua interpretação.**
    Data, turno, identificador, formato de branch, campos obrigatórios, build:
    tudo isso passa por `scripts/` determinísticos. Se um script reprova, você
@@ -51,7 +53,7 @@ O nome da automação em qualquer registro público (PR, commit, relatório) é
 | `repository` | dono/repo | `ricardooliveirafilho7-hue/PulsoByte` |
 | `mode` | `editorial` \| `audit` \| `resume` \| `infrastructure` | `editorial` |
 | `publicationSlot` | `morning` \| `evening` | (obrigatório em `editorial`) |
-| `automationRunId` | `AAAA-MM-DD-morning` \| `AAAA-MM-DD-evening` | gerado se ausente |
+| `automationRunId` | `AAAA-MM-DD-morning` ou `AAAA-MM-DD-morning-02` (idem para evening) | gerado se ausente |
 
 **Modos:**
 - `editorial` — fluxo completo de publicação (o principal).
@@ -67,7 +69,9 @@ Execute nesta ordem. **Não pule etapas. Nenhuma decisão editorial antes do pas
 
 1. Resolver a data em `America/Sao_Paulo` → rode `scripts/resolve-editorial-run.mjs`.
 2. Validar `publicationSlot` (`morning`|`evening`).
-3. Validar/gerar `automationRunId` → `scripts/validate-run-identity.mjs`.
+3. Validar/gerar `automationRunId` → `scripts/resolve-editorial-run.mjs` e
+   `scripts/validate-run-identity.mjs`. A primeira execução não usa sufixo;
+   as adicionais usam o menor sequencial livre entre `-02` e `-99`.
 4. Descobrir a branch padrão pela API do GitHub (não presuma `main`).
 5. Registrar o SHA exato da base.
 6. Confirmar acesso ao GitHub (token presente e válido).
@@ -79,8 +83,11 @@ Execute nesta ordem. **Não pule etapas. Nenhuma decisão editorial antes do pas
 12. Confirmar que os arquivos obrigatórios foram lidos (AGENTS.md, README,
     package.json, schema, exemplos de artigo).
 13. Inventariar o conteúdo existente → `scripts/inspect-editorial-inventory.mjs`.
-14. Confirmar que este turno ainda **não** tem publicação (checar inventário +
-    `automationRunId` + branches/PRs) → `scripts/detect-duplicate-content.mjs`.
+14. Classificar o `automationRunId` com
+    `node scripts/automation/run-state.mjs <automationRunId>` e obedecer à ação
+    retornada. Confirmar que a identidade exata ainda não foi consumida e que
+    não há duplicidade de pauta, branch ou PR →
+    `scripts/detect-duplicate-content.mjs`.
 15. **Só então** iniciar a pesquisa de temas.
 
 Se qualquer passo 1–14 falhar de forma bloqueante, **pare** e produza o relatório
@@ -168,12 +175,15 @@ Cada bloco abaixo tem uma referência detalhada em `references/`. Consulte-a.
 
 ## 4. Nomes e formatos (verificados por script)
 
-- **Branch:** `automation/artigo-AAAA-MM-DD-manha-<slug>` (morning) ou
-  `automation/artigo-AAAA-MM-DD-noite-<slug>` (evening). Slug: minúsculo, sem
-  acento, sem espaço, hifenizado, curto, baseado na entidade principal.
-- **automationRunId:** `^[0-9]{4}-[0-9]{2}-[0-9]{2}-(morning|evening)$`.
-  Sem `-02`, `-retry`, `-final`, `-new`, `-revised` ou qualquer sequencial.
-  Uma data + turno = uma identidade única.
+- **Branch:** primeira execução
+  `automation/artigo-AAAA-MM-DD-manha|noite-<slug>`; adicionais
+  `automation/artigo-AAAA-MM-DD-manha|noite-02-<slug>` até `-99`.
+- **automationRunId:** primeira execução
+  `AAAA-MM-DD-morning|evening`; adicionais usam `-02` até `-99`. `-01`,
+  lacunas e sufixos como `-retry`, `-final` ou `-new` são inválidos.
+- **Limites:** um artigo por execução, até 99 execuções por turno e 198 por
+  data. O aumento de capacidade nunca dispensa os gates editoriais.
+- **Horários oficiais:** `06:00` e `20:30` em `America/Sao_Paulo`.
 - **Commit:** `feat(content): publica artigo sobre <tema>` (adapte ao histórico real).
 - **Título do PR:** `[PulsoByte Editorial][AAAA-MM-DD-morning] <Título>`
   (ou `...-evening`).
@@ -182,9 +192,11 @@ Cada bloco abaixo tem uma referência detalhada em `references/`. Consulte-a.
 
 ## 5. Estado da execução (fonte de verdade = GitHub)
 
-Registre a progressão em `automation/state/execucoes.jsonl` (append-only,
-versionado). Campos: data, turno, `automationRunId`, tema, `topicKey`, branch,
-commit, PR, SHA base, SHA integrado, deployment, URL, etapa atual, timestamp.
+Classifique o estado com `scripts/automation/run-state.mjs`, usando catálogo,
+branches, Pull Requests e checks do GitHub. Registre progresso no relatório,
+corpo/comentários do PR, logs e artifacts do workflow. Não altere
+`automation/state/execucoes.jsonl` em PR editorial: a allowlist canônica permite
+somente artigo, imagens e `automation/editorial-catalog.json`.
 
 Estados canônicos, em ordem:
 `execucao_iniciada` → `pesquisa_concluida` → `artigo_criado` →
@@ -200,7 +212,7 @@ página real.
 ## 6. Retomada (`mode=resume`)
 
 Ao encontrar um `automationRunId` já existente: localize branch, commit e PR,
-identifique a última etapa concluída pelo arquivo de estado, e **continue do
+identifique a última etapa pelos sinais canônicos do GitHub, e **continue do
 ponto certo na mesma branch/PR**. Nunca crie outro identificador, artigo, branch
 ou PR. Reaproveite todo trabalho válido.
 

@@ -10,18 +10,19 @@ o leitor deve se importar. O assunto principal fica claro em segundos.
 
 ## Estrutura de conteúdo
 Introdução → contexto → a novidade → como funciona → disponibilidade → impacto →
-relevância para o Brasil → limitações → conclusão → fontes.
-🔍 CONFIRMAR NO REPO: seguir a estrutura/seções reais se diferentes.
+relevância para o Brasil → limitações → conclusão → fontes. Use somente os
+componentes MDX registrados em `automation/editorial-config.json`.
 
 ## Tamanho
 ~900–1.600 palavras, ou o padrão real do projeto. Use só o espaço necessário.
 Não infle com repetição.
 
 ## Campos (schema)
-🔍 CONFIRMAR NO REPO — o frontmatter real manda. Na ausência de regra diferente,
-inclua: title, slug, summary/resumo, seoDescription, date, author, category,
-tags, publicationSlot, automationRunId, topicKey, image (principal), imageCredit,
-imageAlt, e o corpo. Todos os campos obrigatórios preenchidos.
+Use os nomes reais: `title`, `description`, `slug`, `category`, `tags`, `author`,
+`publishedAt`, `updatedAt`, `status`, `contentType`, `featured`, `coverImage`,
+`coverImageAlt`, `seoTitle` e `seoDescription`. Artigos automáticos também
+declaram `publicationSlot`, `automationRunId`, `topicKey`, `primaryEntity`,
+`searchIntent` e a proveniência completa da capa conforme o validador oficial.
 
 ## Título
 Gere várias opções internas; escolha a mais forte que continue 100% verdadeira.

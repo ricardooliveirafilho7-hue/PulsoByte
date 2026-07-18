@@ -6,32 +6,38 @@
 **automationRunId:** AAAA-MM-DD-morning
 
 ## Tema
-- **Título:** 
-- **Resumo:** 
-- **Motivo da escolha:** 
-- **Entidade principal:** 
-- **Acontecimento principal:** 
-- **topicKey:** 
+
+- **Título:** —
+- **Resumo:** —
+- **Motivo da escolha:** —
+- **Entidade principal:** —
+- **Acontecimento principal:** —
+- **topicKey:** —
 
 ## Fontes principais
-- 
-- 
+
+- —
+- —
 
 ## Imagens
-- **Adicionadas:** 
-- **Origem/crédito:** 
+
+- **Adicionadas:** —
+- **Origem/crédito:** —
 
 ## Arquivos
-- **Criados:** 
-- **Alterados:** 
+
+- **Criados:** —
+- **Alterados:** —
 
 ## Execução
-- **Comandos executados:** 
-- **Validações concluídas:** (schema / lint / typecheck / testes / build / imagens)
-- **Resultado do build:** 
-- **Observações:** 
+
+- **Comandos executados:** —
+- **Validações concluídas:** schema / lint / typecheck / testes / build / imagens
+- **Resultado do build:** —
+- **Observações:** —
 
 ## Checklist
+
 - [ ] Um único tema
 - [ ] Fontes confirmadas (primária ou 2 independentes)
 - [ ] Imagens reais e creditadas

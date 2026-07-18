@@ -1,138 +1,118 @@
 #!/usr/bin/env node
-/**
- * validate-images.mjs
- * ---------------------------------------------------------------------------
- * Valida a imagem principal referenciada por um artigo:
- *   - o arquivo existe no disco (resolvendo o caminho público -> pasta real)
- *   - extensão permitida
- *   - peso máximo
- *   - dimensões mínimas e proporção (se "sharp" estiver instalado; caso
- *     contrário, apenas avisa e pula a checagem de dimensão)
- *   - o artigo declara imageAlt e imageCredit não vazios
- *
- * Config esperada em automation/config/pulsobyte.config.json -> "imagePolicy":
- * {
- *   "publicDir": "public",            // 🔍 pasta que serve os assets
- *   "allowedExt": [".webp",".jpg",".png"],
- *   "maxBytes": 600000,
- *   "minWidth": 1200,
- *   "minHeight": 630
- * }
- *
- * Uso:
- *   node validate-images.mjs --file content/articles/meu-artigo.mdx
- *
- * Código 0 = ok; 1 = falhou. Avisos não-fatais vão em "warnings".
- * ---------------------------------------------------------------------------
- */
+/** Valida a capa de um artigo individual segundo o schema real do PulsoByte. */
 
-import { readFileSync, existsSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, readFileSync, statSync } from "node:fs";
+import { extname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import matter from "gray-matter";
 
-const DEFAULT_CONFIG = "automation/config/pulsobyte.config.json";
+const REPO_ROOT = fileURLToPath(new URL("../../../../", import.meta.url));
+const DEFAULT_CONFIG = join(REPO_ROOT, "automation", "config", "pulsobyte.config.json");
 
 function parseArgs(argv) {
   const args = {};
-  for (let i = 2; i < argv.length; i++) {
-    const a = argv[i];
-    if (a.startsWith("--")) {
-      const key = a.slice(2);
-      const val = argv[i + 1] && !argv[i + 1].startsWith("--") ? argv[++i] : "true";
-      args[key] = val;
-    }
+  for (let index = 2; index < argv.length; index++) {
+    const argument = argv[index];
+    if (!argument.startsWith("--")) continue;
+    const key = argument.slice(2);
+    args[key] =
+      argv[index + 1] && !argv[index + 1].startsWith("--")
+        ? argv[++index]
+        : "true";
   }
   return args;
 }
 
-function parseFrontmatter(raw) {
-  const m = raw.match(/^---\s*\n([\s\S]*?)\n---/);
-  if (!m) return {};
-  const fm = {};
-  for (const line of m[1].split("\n")) {
-    const kv = line.match(/^([A-Za-z0-9_]+)\s*:\s*(.*)$/);
-    if (!kv) continue;
-    let [, key, val] = kv;
-    fm[key] = val.trim().replace(/^["']|["']$/g, "");
-  }
-  return fm;
-}
-
-async function tryDimensions(absPath) {
+async function readDimensions(path) {
   try {
     const sharp = (await import("sharp")).default;
-    const meta = await sharp(absPath).metadata();
-    return { width: meta.width, height: meta.height };
+    const metadata = await sharp(path).metadata();
+    return { width: metadata.width, height: metadata.height };
   } catch {
-    return null; // sharp indisponível: pula dimensão
+    return null;
   }
 }
 
 async function main() {
   const args = parseArgs(process.argv);
-  const file = args.file;
+  const file = args.file ? resolve(args.file) : null;
   const warnings = [];
   const errors = [];
 
   if (!file || !existsSync(file)) {
-    console.error(JSON.stringify({ ok: false, error: `Artigo não encontrado: ${file}` }, null, 2));
+    console.error(JSON.stringify({ ok: false, error: `Artigo não encontrado: ${args.file}` }, null, 2));
     process.exit(1);
   }
 
-  const cfgPath = args.config || DEFAULT_CONFIG;
-  const cfg = existsSync(cfgPath) ? JSON.parse(readFileSync(cfgPath, "utf-8")) : {};
-  const pol = cfg.imagePolicy || {};
-  const publicDir = pol.publicDir || "public";
-  const allowedExt = pol.allowedExt || [".webp", ".jpg", ".jpeg", ".png"];
-  const maxBytes = pol.maxBytes || 800000;
-  const minWidth = pol.minWidth || 0;
-  const minHeight = pol.minHeight || 0;
-
-  if (!cfg.imagePolicy) {
-    warnings.push("imagePolicy ausente na config; usando padrões. 🔍 Ajuste ao projeto.");
+  const configPath = args.config ? resolve(args.config) : DEFAULT_CONFIG;
+  if (!existsSync(configPath)) {
+    console.error(JSON.stringify({ ok: false, error: `Config não encontrada: ${configPath}` }, null, 2));
+    process.exit(1);
   }
 
-  const fm = parseFrontmatter(readFileSync(file, "utf-8"));
+  const config = JSON.parse(readFileSync(configPath, "utf8"));
+  const policy = config.imagePolicy ?? {};
+  const publicDir = resolve(REPO_ROOT, policy.publicDir ?? "public");
+  const allowedExt = policy.allowedExt ?? [".webp"];
+  const maxBytes = policy.maxBytes ?? 512000;
+  const minWidth = policy.minWidth ?? 1200;
+  const minHeight = policy.minHeight ?? 675;
 
-  if (!fm.image) errors.push("Campo image ausente no frontmatter.");
-  if (!fm.imageAlt) errors.push("Campo imageAlt ausente ou vazio.");
-  if (!fm.imageCredit) errors.push("Campo imageCredit ausente ou vazio.");
+  let frontmatter;
+  try {
+    frontmatter = matter(readFileSync(file, "utf8")).data;
+  } catch (error) {
+    errors.push(`Frontmatter YAML inválido: ${error.message}`);
+  }
 
-  if (fm.image) {
-    // Caminho público "/img/x.webp" -> disco "<publicDir>/img/x.webp"
-    const rel = fm.image.startsWith("/") ? fm.image.slice(1) : fm.image;
-    const absPath = join(publicDir, rel);
-
-    if (!existsSync(absPath)) {
-      errors.push(`Arquivo de imagem não existe no disco: ${absPath} (de image=${fm.image})`);
-    } else {
-      const ext = "." + (fm.image.split(".").pop() || "").toLowerCase();
-      if (!allowedExt.includes(ext)) {
-        errors.push(`Extensão não permitida: ${ext}. Permitidas: ${allowedExt.join(", ")}`);
+  if (frontmatter) {
+    for (const field of ["coverImage", "coverImageAlt", "coverImageCredit"]) {
+      if (typeof frontmatter[field] !== "string" || !frontmatter[field].trim()) {
+        errors.push(`Campo ${field} ausente ou vazio.`);
       }
-      const size = statSync(absPath).size;
-      if (size > maxBytes) {
-        errors.push(`Imagem pesada: ${size} bytes > máximo ${maxBytes}. Comprima.`);
+    }
+
+    if (typeof frontmatter.coverImage === "string" && frontmatter.coverImage.trim()) {
+      const relativePath = frontmatter.coverImage.replace(/^\/+/, "");
+      const absolutePath = join(publicDir, relativePath.replace(/^public[\\/]/, ""));
+      const extension = extname(frontmatter.coverImage).toLowerCase();
+
+      if (!frontmatter.coverImage.startsWith("/images/articles/")) {
+        errors.push("coverImage deve apontar para /images/articles/.");
       }
-      if (minWidth || minHeight) {
-        const dim = await tryDimensions(absPath);
-        if (!dim) {
+      if (!allowedExt.includes(extension)) {
+        errors.push(`Extensão não permitida: ${extension}. Permitidas: ${allowedExt.join(", ")}`);
+      }
+      if (!existsSync(absolutePath)) {
+        errors.push(`Arquivo de capa não existe: ${absolutePath}`);
+      } else {
+        const size = statSync(absolutePath).size;
+        if (size > maxBytes) {
+          errors.push(`Imagem pesada: ${size} bytes > máximo ${maxBytes}.`);
+        }
+        const dimensions = await readDimensions(absolutePath);
+        if (!dimensions) {
           warnings.push("sharp indisponível: checagem de dimensões pulada.");
         } else {
-          if (minWidth && dim.width < minWidth)
-            errors.push(`Largura ${dim.width} < mínimo ${minWidth}.`);
-          if (minHeight && dim.height < minHeight)
-            errors.push(`Altura ${dim.height} < mínimo ${minHeight}.`);
+          if (dimensions.width < minWidth) {
+            errors.push(`Largura ${dimensions.width} < mínimo ${minWidth}.`);
+          }
+          if (dimensions.height < minHeight) {
+            errors.push(`Altura ${dimensions.height} < mínimo ${minHeight}.`);
+          }
         }
       }
     }
   }
 
-  if (errors.length) {
+  if (errors.length > 0) {
     console.error(JSON.stringify({ ok: false, file, errors, warnings }, null, 2));
     process.exit(1);
   }
-  console.log(JSON.stringify({ ok: true, file, image: fm.image, warnings }, null, 2));
-  process.exit(0);
+
+  console.log(
+    JSON.stringify({ ok: true, file, coverImage: frontmatter.coverImage, warnings }, null, 2)
+  );
 }
 
 main();

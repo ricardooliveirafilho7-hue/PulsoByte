@@ -1,27 +1,43 @@
-# Template — Artigo
+# Template — Artigo PulsoByte
 
-🔍 CONFIRMAR NO REPO: este template deve espelhar EXATAMENTE o frontmatter e a
-extensão reais do projeto (.mdx provável). Depois de ler um artigo real do repo,
-substitua os campos abaixo pelos verdadeiros. Não use campos hipotéticos em
-produção.
+O arquivo é MDX em `content/articles/<slug>.mdx`. O frontmatter abaixo usa os
+nomes reais do projeto; categorias, formatos, intenções e componentes devem
+respeitar `automation/editorial-config.json` e os validadores oficiais.
 
-Exemplo ilustrativo (ajustar ao schema real):
-
+```yaml
 ---
 title: "<Título final>"
-slug: "<slug-curto-estavel>"
-summary: "<resumo de 1-2 frases>"
-seoDescription: "<descrição SEO que complementa o título>"
-date: "AAAA-MM-DD"
-author: "<autor válido do projeto>"
-category: "<categoria permitida>"
-tags: ["<tag1>", "<tag2>"]
-publicationSlot: "morning" # ou "evening"
+description: "<Resumo direto>"
+slug: "<slug-igual-ao-nome-do-arquivo>"
+category: "<categoria de src/config/categories.ts>"
+tags:
+  - <tag-1>
+  - <tag-2>
+author: "Redação PulsoByte"
+publishedAt: "AAAA-MM-DD"
+updatedAt: "AAAA-MM-DD"
+status: "published"
+contentType: "<tipo permitido>"
+featured: false
+publicationSlot: "morning"
 automationRunId: "AAAA-MM-DD-morning"
-topicKey: "<entidade-produto-evento-data>"
-image: "/<pasta-de-imagens>/<nome-descritivo>.webp"
-imageCredit: "<origem e crédito>"
-imageAlt: "<alt text específico>"
+topicKey: "<entidade-produto-evento>"
+primaryEntity: "<entidade principal>"
+searchIntent: "<intenção permitida>"
+primarySourceUrl: "https://<fonte-primaria-direta>"
+coverImage: "/images/articles/<slug>.webp"
+coverImageAlt: "<descrição específica>"
+coverImageCaption: "<legenda útil>"
+coverImageCredit: "<autor ou organização>"
+coverImageCreditUrl: "https://<pagina-original-da-imagem>"
+coverImageSource: "<origem>"
+coverImageLicense: "<licença ou condição de uso>"
+coverImageType: "<photo|illustration|screenshot|official-render>"
+coverImagePosition: "50% 50%"
+seoTitle: "<título SEO>"
+seoDescription: "<descrição SEO>"
 ---
+```
 
-<!-- Corpo em MDX seguindo a estrutura do contrato editorial -->
+O corpo usa apenas componentes MDX registrados e inclui `Sources` ou
+`SourceList` com URLs HTTPS diretas.

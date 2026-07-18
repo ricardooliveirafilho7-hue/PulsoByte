@@ -1,67 +1,57 @@
 #!/usr/bin/env node
-/**
- * validate-run-identity.mjs
- * ---------------------------------------------------------------------------
- * Valida um automationRunId e impede que o MESMO turno rode duas vezes.
- *
- * Regras de formato:
- *   - Deve casar ^[0-9]{4}-[0-9]{2}-[0-9]{2}-(morning|evening)$
- *   - Proibidos sufixos/sequenciais: -02, -03, -retry, -new, -final, -revised,
- *     -second e variações. (Qualquer coisa após o turno reprova, pois a regex
- *     é ancorada em $.)
- *
- * Trava de duplicidade:
- *   - Lê automation/state/execucoes.jsonl (se existir).
- *   - Se já houver um registro com o mesmo automationRunId cujo status NÃO seja
- *     "falhou_validacao" nem "bloqueado_turno_ja_executado", considera o turno
- *     já ocupado e reprova (a não ser que --mode resume seja passado).
- *
- * Uso:
- *   node validate-run-identity.mjs --runId 2026-07-18-morning
- *   node validate-run-identity.mjs --runId 2026-07-18-morning --mode resume
- *   node validate-run-identity.mjs --runId 2026-07-18-morning --state caminho.jsonl
- *
- * Saída: JSON no stdout. Código 0 = ok para prosseguir; 1 = bloqueado/inválido.
- * ---------------------------------------------------------------------------
- */
+/** Valida uma identidade editorial sem criar ou consumir estado. */
 
-import { readFileSync, existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import {
+  isValidCalendarDate,
+  loadEditorialConfig,
+} from "../../../../scripts/lib/editorial.mjs";
 
-const RUN_ID_RE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}-(morning|evening)$/;
+const REPO_ROOT = fileURLToPath(new URL("../../../../", import.meta.url));
+const config = loadEditorialConfig(REPO_ROOT);
+const runIdPattern = new RegExp(config.identity.automationRunIdPattern);
 const DEFAULT_STATE = "automation/state/execucoes.jsonl";
-
-// Status que NÃO ocupam o turno (permitem nova tentativa do mesmo runId).
 const NON_BLOCKING = new Set(["falhou_validacao", "bloqueado_turno_ja_executado"]);
 
 function parseArgs(argv) {
   const args = {};
-  for (let i = 2; i < argv.length; i++) {
-    const a = argv[i];
-    if (a.startsWith("--")) {
-      const key = a.slice(2);
-      const val = argv[i + 1] && !argv[i + 1].startsWith("--") ? argv[++i] : "true";
-      args[key] = val;
-    }
+  for (let index = 2; index < argv.length; index++) {
+    const argument = argv[index];
+    if (!argument.startsWith("--")) continue;
+    const key = argument.slice(2);
+    args[key] =
+      argv[index + 1] && !argv[index + 1].startsWith("--")
+        ? argv[++index]
+        : "true";
   }
   return args;
 }
 
 function readState(path) {
   if (!existsSync(path)) return [];
-  const raw = readFileSync(path, "utf-8").trim();
+  const raw = readFileSync(path, "utf8").trim();
   if (!raw) return [];
-  const records = [];
-  for (const line of raw.split("\n")) {
-    const t = line.trim();
-    if (!t) continue;
+  return raw.split("\n").flatMap((line) => {
     try {
-      records.push(JSON.parse(t));
+      return [JSON.parse(line)];
     } catch {
-      // Linha corrompida não deve derrubar a validação; registra e segue.
-      records.push({ _corrupt: true, raw: t });
+      return [];
     }
-  }
-  return records;
+  });
+}
+
+function parseRunId(runId) {
+  const match = runId.match(runIdPattern);
+  if (!match) return null;
+  const sequence = match[5] ? Number(match[5]) : 1;
+  const date = `${match[1]}-${match[2]}-${match[3]}`;
+  if (!isValidCalendarDate(date) || (sequence === 1 && match[5])) return null;
+  return {
+    date,
+    slot: match[4],
+    sequence,
+  };
 }
 
 function main() {
@@ -69,15 +59,16 @@ function main() {
   const runId = args.runId || process.env.AUTOMATION_RUN_ID || "";
   const mode = args.mode || process.env.EDITORIAL_MODE || "editorial";
   const statePath = args.state || DEFAULT_STATE;
+  const parsed = parseRunId(runId);
 
-  if (!RUN_ID_RE.test(runId)) {
+  if (!parsed) {
     console.error(
       JSON.stringify(
         {
           ok: false,
-          error: `automationRunId inválido: "${runId}"`,
-          expected: "^[0-9]{4}-[0-9]{2}-[0-9]{2}-(morning|evening)$",
-          hint: "Sem sufixos como -02, -retry, -final, -new, -revised, -second.",
+          error: `automationRunId inválido ou não canônico: "${runId}"`,
+          expected: config.identity.automationRunIdPattern,
+          hint: "A primeira execução não usa sufixo; as seguintes usam -02 até -99.",
         },
         null,
         2
@@ -86,25 +77,23 @@ function main() {
     process.exit(1);
   }
 
-  const records = readState(statePath).filter((r) => !r._corrupt);
-  const sameRun = records.filter((r) => r.automationRunId === runId);
-  const occupying = sameRun.filter((r) => !NON_BLOCKING.has(r.status));
-
+  const sameRun = readState(statePath).filter((record) => record.automationRunId === runId);
+  const occupying = sameRun.filter((record) => !NON_BLOCKING.has(record.status));
   const alreadyOccupied = occupying.length > 0;
   const isResume = mode === "resume";
 
   if (alreadyOccupied && !isResume) {
-    const last = occupying[occupying.length - 1];
+    const last = occupying.at(-1);
     console.error(
       JSON.stringify(
         {
           ok: false,
           blocked: true,
-          reason: "turno_ja_executado",
+          reason: "automation_run_id_ja_consumido",
           automationRunId: runId,
-          lastKnownStatus: last.status || null,
-          lastKnownStage: last.etapa_atual || last.stage || null,
-          hint: "Use mode=resume para continuar a mesma execução, nunca criar outra.",
+          lastKnownStatus: last.status ?? null,
+          lastKnownStage: last.etapa_atual ?? last.stage ?? null,
+          hint: "Retome a mesma branch e o mesmo PR; nunca crie objetos novos para este automationRunId.",
         },
         null,
         2
@@ -113,21 +102,20 @@ function main() {
     process.exit(1);
   }
 
-  const result = {
-    ok: true,
-    automationRunId: runId,
-    mode,
-    priorRecords: sameRun.length,
-    resuming: alreadyOccupied && isResume,
-    lastKnownStage:
-      sameRun.length > 0
-        ? sameRun[sameRun.length - 1].etapa_atual ||
-          sameRun[sameRun.length - 1].stage ||
-          null
-        : null,
-  };
-  console.log(JSON.stringify(result, null, 2));
-  process.exit(0);
+  console.log(
+    JSON.stringify(
+      {
+        ok: true,
+        automationRunId: runId,
+        ...parsed,
+        mode,
+        priorRecords: sameRun.length,
+        resuming: alreadyOccupied && isResume,
+      },
+      null,
+      2
+    )
+  );
 }
 
 main();

@@ -20,12 +20,12 @@ repetição para encher, ou título que promete o que o texto não entrega.
 ## Estrutura padrão do artigo
 Introdução (o quê/quem/quando/por quê) → contexto → a novidade em si →
 como funciona → disponibilidade → impacto → relevância para o Brasil →
-limitações → conclusão → fontes.
-🔍 CONFIRMAR NO REPO: se o projeto tem estrutura/seções fixas diferentes, seguir a real.
+limitações → conclusão → fontes. O artigo deve terminar com `Sources` ou
+`SourceList`, conforme exigido pelo validador oficial para conteúdo automático.
 
 ## Categorias e tags
-🔍 CONFIRMAR NO REPO: usar exatamente as categorias e o vocabulário de tags já
-existentes no catálogo. Não inventar categoria nova sem necessidade.
+Use exatamente as categorias de `src/config/categories.ts` e o vocabulário de
+tags já existente no catálogo. Não invente categoria nova durante a rotina.
 
 ## Fontes
 Primárias sempre que possível. Toda informação central confirmada por 1 fonte

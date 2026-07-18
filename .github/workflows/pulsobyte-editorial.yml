@@ -1,38 +1,35 @@
-name: PulsoByte Editorial
+name: PulsoByte Editorial scheduler
 
-# ---------------------------------------------------------------------------
-# Agendamento (cron do GitHub Actions roda SEMPRE em UTC).
-#   06:00 America/Sao_Paulo = 09:00 UTC  -> turno da manhã (morning)
-#   20:00 America/Sao_Paulo = 23:00 UTC  -> turno da noite  (evening)
-# Observação: o Brasil não usa mais horário de verão desde 2019, então o
-# offset é fixo em UTC-3. Se isso mudar, reajuste os horários aqui.
-#
-# Também permite disparo manual (workflow_dispatch) para testes e recuperação.
-# ---------------------------------------------------------------------------
 on:
   schedule:
-    - cron: "0 9 * * *"    # 06:00 BRT — morning
-    - cron: "0 23 * * *"   # 20:00 BRT — evening
+    - cron: "0 9 * * *" # 06:00 America/Sao_Paulo — morning
+    - cron: "30 23 * * *" # 20:30 America/Sao_Paulo — evening
   workflow_dispatch:
     inputs:
       slot:
-        description: "Turno a executar (morning|evening). Se vazio, é inferido pela hora."
-        required: false
+        description: "Turno editorial"
+        required: true
         type: choice
         options:
-          - ""
           - morning
           - evening
-        default: ""
-      mode:
-        description: "Modo (editorial|audit|resume|infrastructure)"
-        required: false
+      sequence:
+        description: "Sequência: 1 para a primeira execução; 2 a 99 para adicionais"
+        required: true
         type: string
-        default: "editorial"
+        default: "1"
+      mode:
+        description: "Modo de execução"
+        required: true
+        type: choice
+        options:
+          - editorial
+          - resume
+          - infrastructure
+        default: infrastructure
 
-# Impede duas execuções concorrentes deste workflow.
 concurrency:
-  group: pulsobyte-editorial
+  group: pulsobyte-editorial-${{ github.event.schedule || inputs.slot }}
   cancel-in-progress: false
 
 permissions:
@@ -42,117 +39,119 @@ permissions:
 jobs:
   editorial:
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          fetch-depth: 0   # histórico completo p/ inventário e checagens
+          fetch-depth: 0
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
         with:
-          # Usa .nvmrc se existir; senão cai no 20. 🔍 confirmar versão do projeto.
-          node-version-file: ".nvmrc"
-        continue-on-error: true
+          node-version-file: .nvmrc
+          cache: npm
 
-      - name: Setup Node (fallback)
-        if: ${{ failure() }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
+      - name: Install dependencies
+        run: npm ci
 
-      # --------- Determinar o turno ---------
-      # Em schedule, o GitHub não diz qual cron disparou diretamente de forma
-      # trivial, então inferimos pelo horário UTC. Em dispatch, usamos o input.
-      - name: Determinar turno
-        id: slot
+      - name: Validate project before the editorial agent
         run: |
-          SLOT="${{ github.event.inputs.slot }}"
-          if [ -z "$SLOT" ]; then
-            HOUR_UTC=$(date -u +%H)
-            # Janela da manhã: ~09 UTC; noite: ~23 UTC. Corte às 15 UTC.
-            if [ "$HOUR_UTC" -lt 15 ]; then
-              SLOT="morning"
-            else
-              SLOT="evening"
-            fi
+          set -euo pipefail
+          npm test
+          npm run validate:catalog
+          npm run validate:content
+          npm run validate:images
+          npm run typecheck
+          npm run lint
+          npm run build
+
+      - name: Resolve deterministic trigger context
+        id: trigger
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          SCHEDULE: ${{ github.event.schedule }}
+          INPUT_SLOT: ${{ inputs.slot }}
+          INPUT_SEQUENCE: ${{ inputs.sequence }}
+          INPUT_MODE: ${{ inputs.mode }}
+        run: |
+          set -euo pipefail
+          if [[ "${EVENT_NAME}" == "schedule" ]]; then
+            case "${SCHEDULE}" in
+              "0 9 * * *") slot="morning" ;;
+              "30 23 * * *") slot="evening" ;;
+              *) echo "Cron não reconhecido: ${SCHEDULE}"; exit 1 ;;
+            esac
+            sequence="1"
+            mode="editorial"
+          else
+            slot="${INPUT_SLOT}"
+            sequence="${INPUT_SEQUENCE}"
+            mode="${INPUT_MODE}"
           fi
-          echo "slot=$SLOT" >> "$GITHUB_OUTPUT"
-          echo "Turno determinado: $SLOT"
 
-      # --------- Step 1: identidade da execução ---------
-      - name: Resolver execução editorial
+          [[ "${slot}" == "morning" || "${slot}" == "evening" ]] || exit 1
+          [[ "${mode}" == "editorial" || "${mode}" == "resume" || "${mode}" == "infrastructure" ]] || exit 1
+          [[ "${sequence}" =~ ^([1-9]|[1-9][0-9])$ ]] || exit 1
+
+          echo "slot=${slot}" >> "${GITHUB_OUTPUT}"
+          echo "sequence=${sequence}" >> "${GITHUB_OUTPUT}"
+          echo "mode=${mode}" >> "${GITHUB_OUTPUT}"
+
+      - name: Resolve editorial identity
         id: resolve
-        run: node .claude/skills/pulsobyte-editorial-chatgpt/scripts/resolve-editorial-run.mjs --slot "${{ steps.slot.outputs.slot }}"
+        run: >-
+          node .claude/skills/pulsobyte-editorial-chatgpt/scripts/resolve-editorial-run.mjs
+          --slot "${{ steps.trigger.outputs.slot }}"
+          --sequence "${{ steps.trigger.outputs.sequence }}"
 
-      # --------- Step 2: validar identidade / trava de turno ---------
-      - name: Validar identidade da execução
-        id: identity
+      - name: Validate local identity without consuming state
+        run: >-
+          node .claude/skills/pulsobyte-editorial-chatgpt/scripts/validate-run-identity.mjs
+          --runId "${{ steps.resolve.outputs.automation_run_id }}"
+          --mode "${{ steps.trigger.outputs.mode }}"
+
+      - name: Classify canonical remote execution state
+        if: steps.trigger.outputs.mode != 'infrastructure'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ steps.resolve.outputs.automation_run_id }}
+          MODE: ${{ steps.trigger.outputs.mode }}
         run: |
-          node .claude/skills/pulsobyte-editorial-chatgpt/scripts/validate-run-identity.mjs \
-            --runId "${{ steps.resolve.outputs.automation_run_id }}" \
-            --mode "${{ github.event.inputs.mode || 'editorial' }}"
+          set -euo pipefail
+          result="$(node scripts/automation/run-state.mjs "${RUN_ID}")"
+          echo "${result}"
+          action="$(node -e 'const fs=require("fs"); console.log(JSON.parse(fs.readFileSync(0,"utf8")).action)' <<< "${result}")"
 
-      # --------- Step 3: pesquisa + escrita (Claude Code) ---------
-      # A IA lê o repo, pesquisa, escreve o artigo, cria a branch e commita.
-      # A skill pulsobyte-editorial-chatgpt já está no repo clonado e é carregada.
-      - name: Executar turno editorial (Claude Code)
+          if [[ "${MODE}" == "editorial" && "${action}" != "start" ]]; then
+            echo "Execução editorial não pode começar: ação canônica=${action}."
+            exit 1
+          fi
+          if [[ "${MODE}" == "resume" && "${action}" != "resume-pr" && "${action}" != "resume-branch" ]]; then
+            echo "Retomada não autorizada para ação canônica=${action}."
+            exit 1
+          fi
+
+      - name: Execute one editorial run and open one pull request
+        if: steps.trigger.outputs.mode != 'infrastructure'
         uses: anthropics/claude-code-action@v1
         with:
           prompt: |
-            Carregue e siga integralmente a skill `pulsobyte-editorial-chatgpt`
-            no modo `${{ github.event.inputs.mode || 'editorial' }}`.
-            publicationSlot=${{ steps.slot.outputs.slot }}
+            Carregue e siga integralmente a skill `pulsobyte-editorial-chatgpt`.
+            mode=${{ steps.trigger.outputs.mode }}
+            publicationSlot=${{ steps.trigger.outputs.slot }}
             automationRunId=${{ steps.resolve.outputs.automation_run_id }}
-            repository=ricardooliveirafilho7-hue/PulsoByte
+            branchPrefix=${{ steps.resolve.outputs.branch_prefix }}
+            repository=${{ github.repository }}
 
-            Antes de qualquer decisão editorial, LEIA o repositório (AGENTS.md,
-            README, package.json, schema/validadores, e ao menos 3 artigos reais
-            recentes) e ajuste-se ao padrão real. Rode os scripts determinísticos
-            da skill nas etapas indicadas. Produza no máximo UM artigo, UMA branch
-            (${{ steps.resolve.outputs.branch_prefix }}-<slug>), e pare ao abrir
-            UM Pull Request. Não faça merge. Encerre com o relatório oficial.
+            Produza no máximo um artigo nesta execução. Antes de criar qualquer
+            objeto, respeite a classificação de estado canônica. Em retomada,
+            use a mesma branch e o mesmo Pull Request. Abra no máximo um PR não
+            draft e pare. Não faça merge, não habilite auto-merge e não execute
+            deploy. O workflow automated-content.yml é responsável pelas
+            validações do PR e pela integração autorizada.
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-
-      # --------- Step 4: validações determinísticas ---------
-      # (Executadas também aqui como rede de segurança, além de dentro da skill.)
-      # Ajuste os comandos conforme automation/config/pulsobyte.config.json.
-      - name: Instalar dependências
-        run: npm ci
-        continue-on-error: false
-
-      - name: Lint / Typecheck / Testes / Build
-        run: |
-          set -e
-          npm run lint --if-present
-          npm run typecheck --if-present
-          npm test --if-present
-          npm run build --if-present
-
-      # --------- Upload do estado como artifact (observabilidade) ---------
-      - name: Upload do estado da execução
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: pulsobyte-state-${{ steps.resolve.outputs.automation_run_id }}
-          path: automation/state/execucoes.jsonl
-          if-no-files-found: warn
-
-  # Job separado (opcional) para verificar a publicação DEPOIS do merge.
-  # Dispare-o manualmente ou por um workflow de "PR merged" quando o artigo
-  # for integrado. Mantido separado porque a verificação só faz sentido após
-  # a integração autorizada — não no mesmo run que abre o PR.
-  #
-  # verify:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: actions/setup-node@v4
-  #     - name: Verificar publicação
-  #       run: |
-  #         node .claude/skills/pulsobyte-editorial-chatgpt/scripts/verify-publication.mjs \
-  #           --sha "$MERGED_SHA" --url "$ARTICLE_URL" --slug "$SLUG" --title "$TITLE"
-  #       env:
-  #         VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-  #         VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
