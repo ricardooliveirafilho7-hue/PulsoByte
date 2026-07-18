@@ -15,7 +15,7 @@
     "test": "node --test tests/",
     "catalog:generate": "node scripts/generate-editorial-catalog.mjs",
     "validate:catalog": "node scripts/generate-editorial-catalog.mjs --check",
-    "validate:content": "node scripts/validate-article-content.mjs",
+    "validate:content": "node scripts/validate-article-content-v2.mjs",
     "validate:images": "node scripts/validate-article-images.mjs",
     "smoke:production": "node scripts/smoke-test-production.mjs"
   },
