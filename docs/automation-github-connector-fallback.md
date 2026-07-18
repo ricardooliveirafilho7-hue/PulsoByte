@@ -33,6 +33,7 @@ Ao entrar em `CONNECTOR_FALLBACK`:
    - **`automation/editorial-catalog.json` (manifesto editorial)** — este arquivo único, gerado e determinístico, contém o inventário completo do acervo: slugs, títulos normalizados, datas, turnos, `automationRunId`, `topicKey`, entidades, intenções, fontes, hashes SHA-256 e perceptuais das capas e imagens internas. **O fallback não precisa listar a árvore do repositório**;
    - `docs/Plano_Automacao_PulsoByte_2x_Dia.md`;
    - este documento;
+   - `scripts/automation/prepare-connector-image.py`;
    - componentes MDX registrados (`src/components/mdx/MdxContent.tsx`);
    - scripts de validação;
    - `.github/workflows/automated-content.yml`;
@@ -58,7 +59,36 @@ Repita a trava imediatamente antes de criar a branch e imediatamente antes de gr
 
 ## 4. Preparação do artigo e das imagens
 
-O artigo e os ativos podem ser preparados em diretório temporário sem checkout Git, desde que sejam preservadas todas as regras do plano.
+O artigo e os ativos devem ser preparados em diretório temporário do ambiente de execução, sem exigir checkout Git. Falha de DNS para `github.com` não impede download de uma origem editorial HTTPS acessível nem processamento local de bytes.
+
+### 4.1 Pipeline portátil obrigatório
+
+1. leia `scripts/automation/prepare-connector-image.py` pelo conector na `sourceRevision` e grave uma cópia temporária;
+2. grave também o catálogo canônico, sem alterações, em arquivo temporário;
+3. baixe a imagem diretamente da página/origem licenciada, nunca de resultados de busca;
+4. valide que a resposta possui bytes não vazios e formato de imagem reconhecido;
+5. execute o preparador portátil com Python e Pillow;
+6. aceite o arquivo somente se o comando terminar com código zero e produzir manifesto JSON;
+7. leia novamente o WebP gerado, compare seu SHA-256 com o manifesto e só então converta os bytes completos para base64;
+8. após o upload, leia o blob de volta pelo GitHub e confirme bytes e SHA-256 antes de abrir o PR.
+
+Exemplo:
+
+```bash
+python prepare-connector-image.py \
+  --input origem.jpg \
+  --output capa.webp \
+  --catalog editorial-catalog.json \
+  --manifest capa.manifest.json \
+  --source-url 'https://origem.example/imagem-individual' \
+  --license 'Licença verificada'
+```
+
+O utilitário executa crop central 16:9, gera WebP 1600x900, limita o arquivo a 512.000 bytes, remove metadados incorporados, reabre a saída, calcula SHA-256 e aHash 64 bits e bloqueia duplicidade byte a byte ou perceptual contra o catálogo.
+
+Se Pillow não estiver disponível, pode ser instalado apenas no diretório temporário da execução. Isso não altera dependências do repositório. ImageMagick ou Sharp também podem ser usados, desde que produzam o mesmo conjunto de verificações e um manifesto equivalente.
+
+A inexistência de checkout local, por si só, **não autoriza `BLOCKED_INFRASTRUCTURE`** quando o conector consegue ler o preparador, o catálogo e enviar blobs, e o ambiente consegue processar arquivos temporários.
 
 Antes do envio, valide de forma independente tudo o que não depende de `node_modules`:
 
@@ -72,6 +102,7 @@ Antes do envio, valide de forma independente tudo o que não depende de `node_mo
 - WebP verdadeiro;
 - dimensões, proporção e tamanho;
 - SHA-256 e comparação com hashes existentes;
+- hash perceptual e distância contra o catálogo;
 - créditos, origem, licença, legenda, alt e ponto focal;
 - ausência de metadados pessoais;
 - exatamente um artigo novo, uma capa nova e até três imagens internas realmente usadas.
@@ -80,12 +111,20 @@ Arquivos de texto devem ser enviados pela API de conteúdos. Arquivos binários 
 
 ## 5. Branch, commit e PR
 
-1. crie `automation/artigo-AAAA-MM-DD-manha-slug` ou `automation/artigo-AAAA-MM-DD-noite-slug` a partir de `sourceRevision`;
-2. grave apenas os arquivos permitidos (um `.mdx`, uma capa, até três imagens internas usadas e o manifesto `automation/editorial-catalog.json` regenerado — no modo conector, o registro novo do catálogo deve ser construído com os mesmos campos e a mesma serialização do gerador oficial; o CI confere com `validate:catalog` e rejeita qualquer divergência);
-3. confira pela API o diff final e a allowlist;
-4. abra PR não-draft contra a branch padrão descoberta;
-5. não faça merge manual e não habilite auto-merge no PR;
-6. aguarde o workflow `Automated content quality and merge`.
+1. prepare **todos** os arquivos antes de criar qualquer ref;
+2. reconfirme que a branch padrão continua exatamente em `sourceRevision`;
+3. crie blobs para o MDX, a capa, imagens internas e catálogo;
+4. crie uma árvore baseada exatamente na árvore de `sourceRevision`;
+5. crie um único commit cujo pai seja exatamente `sourceRevision`;
+6. reconfirme a base e a idempotência;
+7. crie `automation/artigo-AAAA-MM-DD-manha-slug`, `automation/artigo-AAAA-MM-DD-manha-02-slug` ou equivalente noturno apontando diretamente para o commit já pronto;
+8. leia a capa de volta pelo GitHub e confira bytes e SHA-256;
+9. confira pela API o diff final e a allowlist;
+10. abra PR não-draft contra a branch padrão descoberta;
+11. não faça merge manual e não habilite auto-merge no PR;
+12. aguarde o workflow `Automated content quality and merge`.
+
+Grave apenas os arquivos permitidos: um `.mdx`, uma capa, até três imagens internas usadas e `automation/editorial-catalog.json` regenerado. No modo conector, o registro novo do catálogo deve usar os mesmos campos, ordenação e serialização do gerador oficial; o CI confere com `validate:catalog`.
 
 No modo conector, o GitHub Actions é a autoridade para as verificações que exigem checkout completo:
 
@@ -123,10 +162,12 @@ Encerre `BLOCKED_INFRASTRUCTURE` se ocorrer qualquer uma destas situações:
 - clone falha e o conector GitHub também não consegue ler ou escrever;
 - inventário completo não pode ser obtido;
 - branch padrão ou SHA não podem ser confirmados;
-- não é possível enviar a imagem binária corretamente;
+- nenhuma origem de imagem pode ser baixada após três opções e tentativas;
+- o preparador não consegue produzir WebP válido, exclusivo e dentro dos limites;
+- o blob binário não pode ser enviado ou lido de volta com o mesmo SHA-256;
 - o PR não pode ser aberto;
 - o GitHub Actions não inicia após consultas repetidas;
 - Vercel ou GitHub permanecem indisponíveis;
 - a branch padrão muda e não é possível reconstruir com segurança.
 
-Uma falha de DNS limitada ao terminal, com GitHub e Vercel acessíveis pelos conectores, não deve mais bloquear automaticamente o turno.
+Uma falha de DNS limitada ao clone, com GitHub e Vercel acessíveis pelos conectores e processamento temporário funcional, não deve bloquear o turno.
