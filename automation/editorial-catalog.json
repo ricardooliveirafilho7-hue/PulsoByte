@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "generatedBy": "scripts/generate-editorial-catalog.mjs",
   "note": "Arquivo gerado automaticamente. NÃO edite manualmente: rode npm run catalog:generate.",
-  "articleCount": 15,
+  "articleCount": 16,
   "articles": [
     {
       "slug": "assistentes-de-ia-no-trabalho",
@@ -182,6 +182,38 @@
       "coverImage": "/images/articles/exemplo-rascunho.webp",
       "coverSha256": "de80c10d072e86c78fc390361b0b8cc00469912cec4a419109d6d289f92f5406",
       "coverPerceptualHash": "1111111111111100111111101111000011101000110000001110000011000000",
+      "internalImages": []
+    },
+    {
+      "slug": "golpe-clickfix-roubo-senhas",
+      "file": "content/articles/golpe-clickfix-roubo-senhas.mdx",
+      "status": "published",
+      "title": "Golpe ClickFix rouba senhas com comandos falsos: como se proteger",
+      "normalizedTitle": "golpe clickfix rouba senhas com comandos falsos como se proteger",
+      "publishedAt": "2026-07-18",
+      "updatedAt": "2026-07-18",
+      "category": "noticias",
+      "contentType": "news",
+      "publicationSlot": "evening",
+      "automationRunId": "2026-07-18-evening",
+      "topicKey": "acr-stealer-clickfix-roubo-senhas-julho-2026",
+      "primaryEntity": "ACR Stealer",
+      "normalizedPrimaryEntity": "acr stealer",
+      "searchIntent": "safety",
+      "primarySourceUrl": "https://www.microsoft.com/en-us/security/blog/2026/07/16/acr-stealer-two-observed-intrusion-chains-amid-increased-threat-activity/",
+      "sourceUrls": [
+        "https://support.microsoft.com/en-us/accounts-billing/manage/how-to-recover-a-hacked-or-compromised-microsoft-account",
+        "https://support.microsoft.com/en-us/windows/help-protect-my-pc-with-microsoft-defender-offline-9306d528-64bf-4668-5b80-ff533f183d6c",
+        "https://www.bleepingcomputer.com/news/security/microsoft-warns-of-surge-in-acr-stealer-attacks-on-customers/",
+        "https://www.microsoft.com/en-us/security/blog/2026/07/16/acr-stealer-two-observed-intrusion-chains-amid-increased-threat-activity/"
+      ],
+      "sourceDomains": [
+        "bleepingcomputer.com",
+        "microsoft.com"
+      ],
+      "coverImage": "/images/articles/golpe-clickfix-roubo-senhas.webp",
+      "coverSha256": "8a063ed2d9021f445e04cf9e6b80932dfc8d5ba69da1d2821e202037a343f94a",
+      "coverPerceptualHash": "1111111111111111111001001100010011000000100000001111111111111111",
       "internalImages": []
     },
     {

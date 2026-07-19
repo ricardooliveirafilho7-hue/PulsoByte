@@ -1,0 +1,210 @@
+---
+title: "Golpe ClickFix rouba senhas com comandos falsos: como se proteger"
+description: "Campanhas do ACR Stealer usam falsas verificações para convencer vítimas a executar comandos. Veja os sinais do ClickFix e o que fazer se você caiu."
+slug: "golpe-clickfix-roubo-senhas"
+category: "noticias"
+tags:
+  - seguranca
+  - golpes-digitais
+  - malware
+  - windows
+author: "Redação PulsoByte"
+publishedAt: "2026-07-18"
+updatedAt: "2026-07-18"
+status: "published"
+contentType: "news"
+difficulty: "beginner"
+editorialPriority: "standard"
+reviewStatus: "reviewed"
+evergreen: false
+featured: false
+publicationSlot: "evening"
+automationRunId: "2026-07-18-evening"
+topicKey: "acr-stealer-clickfix-roubo-senhas-julho-2026"
+primaryEntity: "ACR Stealer"
+searchIntent: "safety"
+primarySourceUrl: "https://www.microsoft.com/en-us/security/blog/2026/07/16/acr-stealer-two-observed-intrusion-chains-amid-increased-threat-activity/"
+coverImage: "/images/articles/golpe-clickfix-roubo-senhas.webp"
+coverImageAlt: "Ilustração abstrata de uma falsa verificação levando comandos a roubar credenciais e documentos"
+coverImageCaption: "No ClickFix, a etapa decisiva é social: a página convence a vítima a executar o comando que inicia o ataque."
+coverImageCredit: "Redação PulsoByte"
+coverImageCreditUrl: "https://github.com/ricardooliveirafilho7-hue/PulsoByte"
+coverImageSource: "Ilustração original PulsoByte criada com ferramenta generativa da OpenAI"
+coverImageLicense: "Todos os direitos reservados PulsoByte"
+coverImageType: "illustration"
+coverImagePosition: "50% 50%"
+seoTitle: "ClickFix: como o golpe rouba senhas e como se proteger"
+seoDescription: "Entenda como o ClickFix usa falsas verificações para induzir comandos, roubar senhas e tokens e veja o que fazer para se proteger."
+---
+
+Uma página avisa que houve um erro, apresenta uma verificação aparentemente simples e manda copiar um comando para “corrigir” o problema. O pedido pode parecer técnico, mas é justamente o golpe: a vítima executa por conta própria a instrução que abre caminho para o malware.
+
+A Microsoft alertou em 16 de julho de 2026 para o aumento de campanhas do **ACR Stealer** com essa técnica, conhecida como **ClickFix**. A empresa observou a atividade entre o fim de abril e meados de junho. Os ataques buscavam credenciais salvas no navegador, cookies e tokens de sessão, além de documentos locais e arquivos acessíveis pelo Microsoft 365, OneDrive e SharePoint.
+
+<QuickSummary
+  items={[
+    "ClickFix é uma técnica de engenharia social que induz a vítima a copiar e executar um comando.",
+    "Nas campanhas analisadas pela Microsoft, o comando iniciou cadeias de infecção do ACR Stealer no Windows.",
+    "Um CAPTCHA legítimo não pede para abrir Executar, PowerShell, Terminal ou Prompt de Comando.",
+    "Se você executou a instrução, isole o computador, faça uma verificação de segurança e proteja as contas a partir de um aparelho confiável.",
+  ]}
+/>
+
+## O que aconteceu
+
+Pesquisadores do Microsoft Defender Experts identificaram um crescimento de ataques do ACR Stealer direcionados a clientes. A análise técnica descreve duas cadeias de invasão predominantes. Uma usa recursos do Windows e scripts em várias etapas; a outra combina arquivos remotos, PowerShell e conteúdo oculto em imagem para carregar o código malicioso na memória.
+
+Os detalhes mudam de uma campanha para outra, mas o primeiro passo é parecido: uma página maliciosa mostra uma falsa verificação ou um aviso de erro e orienta a pessoa a copiar uma instrução, abrir uma ferramenta do Windows, colar o conteúdo e pressionar Enter.
+
+Isso ajuda o ataque a contornar uma barreira importante. Em vez de explorar sozinho uma falha para iniciar a infecção, o criminoso convence o próprio usuário a autorizar a ação. O site pode chegar por anúncio malicioso, resultado de busca manipulado ou outro link enganoso; por isso, aparência profissional e cadeado HTTPS não bastam para provar que a instrução é segura.
+
+<WhyItMatters>
+  O ACR Stealer não procura apenas senhas. Cookies e tokens roubados podem permitir que um invasor reutilize uma sessão já autenticada, enquanto documentos corporativos e pessoais ampliam o impacto para privacidade, fraude e espionagem.
+</WhyItMatters>
+
+## O que é ClickFix
+
+<Definition term="ClickFix">
+  É uma técnica de engenharia social que apresenta uma falsa correção ou verificação e manda a vítima executar comandos no próprio aparelho. O nome descreve o truque de “clicar para corrigir”; não é o nome de um único vírus.
+</Definition>
+
+Um CAPTCHA verdadeiro pode pedir para selecionar imagens, marcar uma caixa ou confirmar uma ação dentro do navegador. Ele não precisa que você use **Windows + R**, abra PowerShell, Terminal ou Prompt de Comando e cole uma sequência copiada do site.
+
+Essa diferença é o sinal mais útil para o público geral. O texto pode alegar que o comando é necessário para provar que você é humano, liberar um vídeo, corrigir a conexão ou instalar uma atualização. A justificativa muda; o pedido perigoso permanece.
+
+<Callout type="warning" title="Regra prática">
+  Nunca execute um comando copiado de uma página apenas porque ela afirma que isso concluirá um CAPTCHA, removerá um erro ou liberará um arquivo. Feche a aba e procure o serviço pelo endereço oficial.
+</Callout>
+
+## Como a infecção acontece
+
+Na primeira cadeia descrita pela Microsoft, o comando inicial acessa conteúdo remoto por WebDAV e aciona ferramentas legítimas do Windows. Depois, scripts e um ambiente Python são usados para manter o malware ativo e iniciar o roubo de dados.
+
+Na segunda, o ataque usa MSHTA e PowerShell para buscar novas etapas. Parte do código fica escondida em uma imagem, técnica chamada **esteganografia**, e o carregamento ocorre na memória. Esse desenho dificulta a análise e reduz a quantidade de arquivos maliciosos óbvios gravados no disco.
+
+Não é necessário memorizar esses nomes para evitar o golpe. Eles explicam por que a instrução copiada não deve ser tratada como texto inofensivo: ao ser colada em uma ferramenta do sistema, ela pode baixar e executar outras etapas sem mostrar uma instalação convencional.
+
+Também é importante não generalizar. Nem toda página falsa distribui o ACR Stealer, e nem todo alerta inesperado no Windows significa ClickFix. A combinação decisiva é a página ou mensagem não confiável pedindo para copiar e executar comandos.
+
+## O que o ACR Stealer tenta roubar
+
+Segundo a investigação da Microsoft, as campanhas observadas procuravam:
+
+- nomes de usuário e senhas armazenados em navegadores;
+- cookies e tokens que mantêm contas conectadas;
+- documentos PDF e arquivos do Microsoft Office;
+- conteúdo local sincronizado ou acessível por serviços como OneDrive e SharePoint;
+- informações que possam permitir novos acessos ou ampliar o ataque dentro de uma organização.
+
+Roubar um token de sessão é especialmente relevante porque trocar apenas a senha pode não encerrar uma conexão que já estava ativa. A resposta precisa incluir a revisão de dispositivos e sessões conectadas, sempre que o serviço oferecer esse controle.
+
+## Como reconhecer o golpe antes de executar
+
+Interrompa a ação se uma página, anúncio, arquivo ou mensagem:
+
+- mandar pressionar **Windows + R** para abrir a caixa Executar;
+- pedir para abrir PowerShell, Terminal ou Prompt de Comando;
+- fornecer uma sequência para copiar e colar sem explicar cada efeito;
+- afirmar que o procedimento é um CAPTCHA ou uma verificação de pessoa;
+- criar urgência, dizendo que o navegador, vídeo ou documento ficará bloqueado;
+- impedir a navegação normal até que o comando seja executado.
+
+Fechar a aba é seguro. Se o aviso parecia pertencer a um serviço conhecido, digite o endereço oficial em uma nova janela ou abra o aplicativo instalado. Não volte ao resultado patrocinado nem use o link recebido para confirmar.
+
+Atualizações automáticas, proteção em tempo real e filtros do navegador reduzem o risco, mas não substituem esse cuidado. No ClickFix, a vítima é induzida a usar uma ferramenta legítima; nenhuma proteção deve ser tratada como garantia de bloqueio.
+
+## O que fazer se você executou o comando
+
+Agir rápido limita a exposição, mas não há um único botão capaz de provar que todas as credenciais continuam seguras.
+
+<StepByStep
+  steps={[
+    {
+      title: "Isole o computador",
+      description:
+        "Desconecte o Wi-Fi ou o cabo de rede e pare de usar o aparelho para acessar e-mail, banco, trabalho ou gerenciador de senhas. Em equipamento corporativo, avise imediatamente a equipe de TI ou segurança.",
+    },
+    {
+      title: "Faça uma verificação completa",
+      description:
+        "Atualize as definições do antivírus e execute uma verificação completa. A Microsoft recomenda o Microsoft Defender Offline quando há suspeita de infecção persistente; salve o trabalho antes, pois o computador será reiniciado.",
+    },
+    {
+      title: "Proteja as contas em um aparelho confiável",
+      description:
+        "Depois de iniciar a contenção, use outro celular ou computador confiável para trocar primeiro as senhas do e-mail principal, gerenciador de senhas, contas financeiras e trabalho. Não faça a troca no sistema possivelmente infectado.",
+    },
+    {
+      title: "Encerre sessões e reforce o login",
+      description:
+        "Revise dispositivos conectados, encerre sessões desconhecidas e revogue acessos quando a conta permitir. Ative autenticação em dois fatores ou uma passkey; códigos de recuperação expostos também devem ser substituídos.",
+    },
+    {
+      title: "Procure ajuda se o risco continuar",
+      description:
+        "Detecções que retornam, comportamento estranho ou acesso a dados sensíveis justificam suporte técnico especializado. Uma reinstalação pode ser necessária em casos graves, mas deve ser planejada para não apagar evidências ou restaurar arquivos contaminados.",
+    },
+  ]}
+/>
+
+Trocar a senha antes de limpar o computador infectado pode permitir que o malware capture a nova credencial. Para contas Microsoft comprometidas, a própria empresa orienta fazer uma verificação completa do sistema antes de alterar a senha naquele aparelho. Quando houver outro dispositivo confiável, ele é a melhor opção para começar a proteger as contas enquanto o PC suspeito permanece isolado.
+
+## Como reduzir o impacto de um roubo de credenciais
+
+Evitar o comando é a defesa principal. Ainda assim, algumas medidas tornam uma eventual invasão menos danosa:
+
+- não guarde senhas importantes diretamente no navegador de um computador compartilhado;
+- use senhas únicas e um gerenciador protegido por autenticação forte;
+- prefira [passkeys nas contas compatíveis](/artigos/guia-passkeys-adeus-senhas), pois elas são vinculadas ao serviço legítimo e resistem melhor ao phishing;
+- mantenha Windows, navegador e proteção de segurança atualizados;
+- revise periodicamente sessões e dispositivos conectados às contas principais;
+- mantenha backup de documentos importantes fora do alcance permanente do computador.
+
+Passkeys não impedem que um malware roube documentos ou tente capturar sessões já abertas. Elas reduzem um dos alvos mais valiosos — a senha reutilizável —, mas precisam fazer parte de uma proteção em camadas.
+
+<FAQ
+  items={[
+    {
+      question: "Um CAPTCHA legítimo pede para abrir o PowerShell?",
+      answer:
+        "Não. Verificações legítimas acontecem no navegador ou aplicativo. Um pedido para abrir Executar, PowerShell, Terminal ou Prompt de Comando e colar uma instrução é um forte sinal de golpe.",
+    },
+    {
+      question: "Atualizar o Windows remove o ACR Stealer?",
+      answer:
+        "Atualizações corrigem falhas e fortalecem a proteção, mas não comprovam que uma infecção iniciada por comando foi removida. Faça uma verificação completa e siga a resposta a incidente adequada ao aparelho.",
+    },
+    {
+      question: "Trocar a senha é suficiente?",
+      answer:
+        "Não necessariamente. As campanhas também miram cookies e tokens de sessão. Além de trocar credenciais a partir de um aparelho confiável, encerre sessões, revise dispositivos conectados e revogue acessos quando possível.",
+    },
+  ]}
+/>
+
+## Conclusão
+
+O ClickFix funciona porque transforma uma falsa ajuda em autorização para o ataque. A regra é simples: nenhuma verificação comum precisa que você copie um comando de um site e o execute nas ferramentas do Windows.
+
+Se isso já aconteceu, trate o computador como potencialmente comprometido. Isole o aparelho, verifique o sistema, proteja as contas por um dispositivo confiável e encerre sessões ativas. A resposta rápida importa porque o alvo pode incluir não só senhas, mas também tokens e documentos.
+
+<Sources
+  items={[
+    {
+      label: "Microsoft Security Blog — ACR Stealer: duas cadeias de invasão observadas",
+      url: "https://www.microsoft.com/en-us/security/blog/2026/07/16/acr-stealer-two-observed-intrusion-chains-amid-increased-threat-activity/",
+    },
+    {
+      label: "BleepingComputer — Microsoft alerta para aumento de ataques do ACR Stealer",
+      url: "https://www.bleepingcomputer.com/news/security/microsoft-warns-of-surge-in-acr-stealer-attacks-on-customers/",
+    },
+    {
+      label: "Microsoft Support — Verificação offline com o Microsoft Defender",
+      url: "https://support.microsoft.com/en-us/windows/help-protect-my-pc-with-microsoft-defender-offline-9306d528-64bf-4668-5b80-ff533f183d6c",
+    },
+    {
+      label: "Microsoft Support — Recuperar uma conta Microsoft comprometida",
+      url: "https://support.microsoft.com/en-us/accounts-billing/manage/how-to-recover-a-hacked-or-compromised-microsoft-account",
+    },
+  ]}
+/>
