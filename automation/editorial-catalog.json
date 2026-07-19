@@ -324,6 +324,41 @@
       "internalImages": []
     },
     {
+      "slug": "meta-ai-alertas-pais-adolescentes",
+      "file": "content/articles/meta-ai-alertas-pais-adolescentes.mdx",
+      "status": "published",
+      "title": "Meta AI vai avisar pais sobre conversas de risco: o que muda para adolescentes",
+      "normalizedTitle": "meta ai vai avisar pais sobre conversas de risco o que muda para adolescentes",
+      "publishedAt": "2026-07-18",
+      "updatedAt": "2026-07-18",
+      "category": "noticias",
+      "contentType": "news",
+      "publicationSlot": null,
+      "automationRunId": null,
+      "topicKey": null,
+      "primaryEntity": null,
+      "normalizedPrimaryEntity": null,
+      "searchIntent": null,
+      "primarySourceUrl": null,
+      "sourceUrls": [
+        "https://abcnews.com/GMA/Family/meta-alert-parents-teen-ai-chats-suggest-suicide/story?id=134794158",
+        "https://about.fb.com/news/2026/07/keeping-parents-informed-teens-distress-conversations-meta-ai/",
+        "https://cvv.org.br/",
+        "https://familycenter.meta.com/supervision",
+        "https://www.gov.br/saude/pt-br/assuntos/saude-de-a-a-z/s/suicidio-prevencao"
+      ],
+      "sourceDomains": [
+        "abcnews.com",
+        "fb.com",
+        "meta.com",
+        "www.gov.br"
+      ],
+      "coverImage": "/images/articles/meta-ai-alertas-pais-adolescentes.webp",
+      "coverSha256": "e8a86faef34fb3aa88ffa099b2c68840acaa692ed7c0dd806386944f15bbfe3b",
+      "coverPerceptualHash": "1100111111001111110000111100001111011011110011001100001111000001",
+      "internalImages": []
+    },
+    {
       "slug": "notebook-ou-tablet-qual-escolher",
       "file": "content/articles/notebook-ou-tablet-qual-escolher.mdx",
       "status": "published",
