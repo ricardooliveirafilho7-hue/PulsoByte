@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "generatedBy": "scripts/generate-editorial-catalog.mjs",
   "note": "Arquivo gerado automaticamente. NÃO edite manualmente: rode npm run catalog:generate.",
-  "articleCount": 16,
+  "articleCount": 17,
   "articles": [
     {
       "slug": "assistentes-de-ia-no-trabalho",
@@ -105,6 +105,40 @@
       "coverImage": "/images/articles/como-organizar-notificacoes-do-celular.webp",
       "coverSha256": "65a1ed78b53957b081f009852b2865441501eb2cba42bb542c562176db349018",
       "coverPerceptualHash": "0001100000011100000111100001111000011110000111110000001000000000",
+      "internalImages": []
+    },
+    {
+      "slug": "como-proteger-android-contra-roubo",
+      "file": "content/articles/como-proteger-android-contra-roubo.mdx",
+      "status": "published",
+      "title": "Celular Android roubado: o que ativar antes e fazer depois",
+      "normalizedTitle": "celular android roubado o que ativar antes e fazer depois",
+      "publishedAt": "2026-08-07",
+      "updatedAt": "2026-08-07",
+      "category": "guias",
+      "contentType": "guide",
+      "publicationSlot": "morning",
+      "automationRunId": "2026-08-07-morning",
+      "topicKey": "protecao-android-contra-roubo-bloqueio-remoto",
+      "primaryEntity": "Proteção contra roubo do Android",
+      "normalizedPrimaryEntity": "protecao contra roubo do android",
+      "searchIntent": "practical",
+      "primarySourceUrl": "https://support.google.com/android/answer/15146908?hl=pt-BR",
+      "sourceUrls": [
+        "https://blog.google/security/whats-new-in-android-security-privacy-2026/",
+        "https://support.google.com/android/answer/15146908?hl=pt-BR",
+        "https://support.google.com/android/answer/6160491?hl=pt-br",
+        "https://www.gov.br/anatel/pt-br/assuntos/celular-legal/celular-seguro",
+        "https://www.gov.br/anatel/pt-br/consumidor/conheca-seus-direitos-2/telefonia-movel/perda-ou-roubo-do-aparelho-celular"
+      ],
+      "sourceDomains": [
+        "blog.google",
+        "google.com",
+        "www.gov.br"
+      ],
+      "coverImage": "/images/articles/como-proteger-android-contra-roubo.webp",
+      "coverSha256": "419d164918eb7c928b0a53b121c5f77d649a2dba2f3828d38bb3127063c82d64",
+      "coverPerceptualHash": "1111000111110001111110111111001100110111000001110000011100000111",
       "internalImages": []
     },
     {
